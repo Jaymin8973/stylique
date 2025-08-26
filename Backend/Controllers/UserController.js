@@ -68,6 +68,25 @@ const login = async (req, res) => {
   }
 };
 
+ const getUser = async (req, res) => {
+  const { email } = req.body;
+  console.log(email);
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 const sendOtp = async (req, res) => {
     const { email } = req.body;
@@ -112,25 +131,37 @@ const sendOtp = async (req, res) => {
     }
 };
 
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ message: 'Email and OTP are required' });
+  }
+
+  const record = otpStore[email];
+
+  if (!record) {
+    return res.status(400).json({ message: 'OTP not found or expired' });
+  }
+
+  if (Date.now() > record.expiresAt) {
+    delete otpStore[email];
+    return res.status(400).json({ message: 'OTP expired' });
+  }
+
+  if (record.otp != otp) {
+    console.log(`OTP mismatch: expected ${record.otp}, received ${otp}`);
+    return res.status(400).json({ message: 'Invalid OTP' });
+  }
+
+  return res.status(200).json({ message: 'OTP verified successfully' });
+}
+
 const forgotpassword = async (req, res) => {
-    const { email, otp, newPassword } = req.body;
+    const { email, newPassword } = req.body;
 
-    if (!email || !otp || !newPassword) {
-        return res.status(400).json({ message: 'Email, OTP, and new password are required' });
-    }
-
-    const record = otpStore[email];
-
-    if (!record) return res.status(400).json({ message: 'OTP not found or expired' });
-
-    if (Date.now() > record.expiresAt) {
-        delete otpStore[email];
-        return res.status(400).json({ message: 'OTP expired' });
-    }
-
-    if (record.otp != otp) {
-      console.log(`OTP mismatch: expected ${record.otp}, received ${otp}`);
-        return res.status(400).json({ message: 'Invalid OTP' });
+    if (!email || !newPassword) {
+        return res.status(400).json({ message: 'Email and new password are required' });
     }
 
      try {
@@ -159,4 +190,4 @@ const forgotpassword = async (req, res) => {
     
 };
 
-module.exports = { register, login , sendOtp , forgotpassword};
+module.exports = { register, login , sendOtp , forgotpassword , verifyOtp , getUser};
