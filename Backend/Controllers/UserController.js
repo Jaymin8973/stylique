@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 
 const otpStore = {};
 
-const register = async (req, res) => {
+exports.register = async (req, res) => {
   const { firstname, lastname, email, password, gender, phone, image } = req.body;
   try {
     const userExists = await User.findOne({ where: { email } });
@@ -23,7 +23,7 @@ const register = async (req, res) => {
 };
 
 
-const login = async (req, res) => {
+exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
     const userExists = await User.findOne({ where: { email } });
@@ -68,9 +68,8 @@ const login = async (req, res) => {
   }
 };
 
- const getUser = async (req, res) => {
+exports.getUser = async (req, res) => {
   const { email } = req.body;
-  console.log(email);
   if (!email) {
     return res.status(400).json({ message: 'Email is required' });
   }
@@ -88,7 +87,7 @@ const login = async (req, res) => {
   }
 };
 
-const sendOtp = async (req, res) => {
+exports.sendOtp = async (req, res) => {
     const { email } = req.body;
 
     if (!email) return res.status(400).json({ message: 'Email is required' });
@@ -131,7 +130,7 @@ const sendOtp = async (req, res) => {
     }
 };
 
-const verifyOtp = async (req, res) => {
+exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -150,14 +149,13 @@ const verifyOtp = async (req, res) => {
   }
 
   if (record.otp != otp) {
-    console.log(`OTP mismatch: expected ${record.otp}, received ${otp}`);
     return res.status(400).json({ message: 'Invalid OTP' });
   }
 
   return res.status(200).json({ message: 'OTP verified successfully' });
 }
 
-const forgotpassword = async (req, res) => {
+exports.forgotpassword = async (req, res) => {
     const { email, newPassword } = req.body;
 
     if (!email || !newPassword) {
@@ -190,4 +188,34 @@ const forgotpassword = async (req, res) => {
     
 };
 
-module.exports = { register, login , sendOtp , forgotpassword , verifyOtp , getUser};
+exports.updateUser = async (req, res) => {
+  const { email , firstname , lastname , gender , phone , image} = req.body;
+  console.log(gender);
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+
+    user.firstname = firstname || user.firstname;
+    user.lastname = lastname || user.lastname;
+    user.gender = gender || user.gender;
+    user.phone = phone || user.phone;
+    user.image = image || user.image;
+
+    await user.save();
+
+    return res.status(200).json({ message: 'User updated successfully', user });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
