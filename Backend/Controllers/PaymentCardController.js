@@ -19,8 +19,9 @@ exports.getCard = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const paymentCards = await PaymentCard.findAll({ where: { user_id: user.user_id } });
-    res.json(paymentCards);
+    const paymentCard = await PaymentCard.findAll({ where: { user_id: user.user_id } });
+    console.log(paymentCard);
+    res.json(paymentCard);
   } catch (error) {
     console.error('Error fetching payment cards:', error);
     res.status(500).json({ error: 'Internal server error' });
