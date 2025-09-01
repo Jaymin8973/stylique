@@ -5,6 +5,7 @@ const userRoutes = require('./Routes/UserRoutes');
 const paymentCardRoutes = require('./Routes/PaymentCradRoutes');
 require('dotenv').config();
 const cors = require('cors');
+const Address = require('./Routes/Address');
 
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use('/users', userRoutes);
 app.use('/payment-cards', paymentCardRoutes);
+app.use('/address', Address);
 
 // Sync DB and start server
 sequelize.sync().then(() => {
