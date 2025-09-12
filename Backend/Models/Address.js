@@ -50,6 +50,10 @@ const Address = sequelize.define('Address', {
   addressType: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  selected: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 });
  

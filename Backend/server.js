@@ -6,6 +6,10 @@ const paymentCardRoutes = require('./Routes/PaymentCradRoutes');
 require('dotenv').config();
 const cors = require('cors');
 const Address = require('./Routes/Address');
+const Category = require('./Routes/Category');
+const Product = require('./Routes/Product');
+const SubCategory = require('./Routes/SubCategory');
+const ProductRating = require('./Routes/RatingRoutes');
 
 
 const app = express();
@@ -22,8 +26,12 @@ app.use(bodyParser.json());
 app.use('/users', userRoutes);
 app.use('/payment-cards', paymentCardRoutes);
 app.use('/address', Address);
+app.use('/categories', Category);
+app.use('/subcategories', SubCategory);
+app.use('/products', Product);
+app.use('/rating', ProductRating);
 
-// Sync DB and start server
+
 sequelize.sync().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

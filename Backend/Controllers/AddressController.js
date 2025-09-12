@@ -27,6 +27,8 @@ exports.addAddress = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        const addressCount = await Address.count({ where: { user_id: user.user_id } });
+
         const newAddress = await Address.create({
             user_id: user.user_id,
             firstName,
@@ -37,12 +39,36 @@ exports.addAddress = async (req, res) => {
             street,
             city,
             state,
-            addressType
+            addressType,
+            selected: addressCount == 0
         });
 
         res.status(201).json(newAddress);
     } catch (error) {
         console.error('Error adding address:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+exports.UpdateSelected = async (req, res) => {
+    const { address_id, email } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+
+    try {
+        await Address.update(
+            { selected: false },
+            { where: { user_id: user.user_id } }
+        );
+
+        const Select = await Address.findOne({ where: { address_id } });
+
+        Select.selected = true;
+        await Select.save();
+
+        res.status(200).json(Select);
+    } catch (error) {
+        console.error('Error updating address selection:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 }

@@ -1,0 +1,65 @@
+{
+  "feature_products":[
+  {
+    "id": "1",
+    "name": "Men's Casual Shirt",
+    "price": "$45",
+    "image": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f" 
+  },
+  {
+    "id": "2",
+    "name": "Women's Summer Dress",
+    "price": "$55",
+    "image": "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb"
+  },
+  {
+    "id": "3",
+    "name": "Men's Denim Jacket",
+    "price": "$90",
+    "image": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246"
+  },
+  {
+    "id": "4",
+    "name": "Women's Casual Top",
+    "price": "$35",
+    "image": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d"
+  },
+  {
+    "id": "5",
+    "name": "Men's Polo Shirt",
+    "price": "$40",
+    "image": "https://images.unsplash.com/photo-1521334884684-d80222895322"
+  },
+  {
+    "id": "6",
+    "name": "Women's Blazer",
+    "price": "$85",
+    "image": "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb"
+  },
+  {
+    "id": "7",
+    "name": "Men's Hoodie",
+    "price": "$60",
+    "image": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f"
+  },
+  {
+    "id": "8",
+    "name": "Women's Jeans",
+    "price": "$70",
+    "image": "https://images.unsplash.com/photo-1521334884684-d80222895322"
+  },
+  {
+    "id": "9",
+    "name": "Men's Formal Suit",
+    "price": "$120",
+    "image": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f"
+  },
+  {
+    "id": "10",
+    "name": "Women's Skirt",
+    "price": "$50",
+    "image": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246"
+  }
+]
+
+}

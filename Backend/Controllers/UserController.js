@@ -16,7 +16,17 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 8);
     const user = await User.create({ firstname, lastname, email, password: hashedPassword, gender, phone, image });
 
-    res.status(201).json({ message: 'User created', userId: user.id });
+  jwt.sign(
+          { userId: userExists.id },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' },
+          (err, token) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error generating token' });
+            }
+            return res.status(200).json({ message: 'User Created', token , userId: user.id });
+          }
+        );
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
