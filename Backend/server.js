@@ -2,14 +2,24 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const sequelize = require('./db');
 const userRoutes = require('./Routes/UserRoutes');
-const paymentCardRoutes = require('./Routes/PaymentCradRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const subCategoryRoutes = require('./routes/subCategoryRoutes');
+const productRoutes = require('./routes/productRoutes');
+const productVariantRoutes = require('./routes/productVariantRoutes');
+const variantImageRoutes = require('./routes/variantImageRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+const cartItemRoutes = require('./routes/cartItemRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const orderItemRoutes = require('./routes/orderItemRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const returnRoutes = require('./routes/returnRoutes');
+const ratingRoutes = require('./routes/ratingRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const discountRoutes = require('./routes/discountRoutes');
 require('dotenv').config();
 const cors = require('cors');
-const Address = require('./Routes/Address');
-const Category = require('./Routes/Category');
-const Product = require('./Routes/Product');
-const SubCategory = require('./Routes/SubCategory');
-const ProductRating = require('./Routes/RatingRoutes');
+
 
 
 const app = express();
@@ -23,13 +33,23 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
+
 app.use('/users', userRoutes);
-app.use('/payment-cards', paymentCardRoutes);
-app.use('/address', Address);
-app.use('/categories', Category);
-app.use('/subcategories', SubCategory);
-app.use('/products', Product);
-app.use('/rating', ProductRating);
+app.use('/categories', categoryRoutes);
+app.use('/subcategories', subCategoryRoutes);
+app.use('/products', productRoutes);
+app.use('/product-variants', productVariantRoutes);
+app.use('/variant-images', variantImageRoutes);
+app.use('/carts', cartRoutes);
+app.use('/cart-items', cartItemRoutes);
+app.use('/wishlists', wishlistRoutes);
+app.use('/orders', orderRoutes);
+app.use('/order-items', orderItemRoutes);
+app.use('/payments', paymentRoutes);
+app.use('/returns', returnRoutes);
+app.use('/ratings', ratingRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/discounts', discountRoutes);
 
 
 sequelize.sync().then(() => {

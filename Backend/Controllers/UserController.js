@@ -17,14 +17,14 @@ exports.register = async (req, res) => {
     const user = await User.create({ firstname, lastname, email, password: hashedPassword, gender, phone, image });
 
   jwt.sign(
-          { userId: userExists.id },
+          { user_id: userExists.id },
           process.env.JWT_SECRET,
           { expiresIn: '1h' },
           (err, token) => {
             if (err) {
               return res.status(500).json({ error: 'Error generating token' });
             }
-            return res.status(200).json({ message: 'User Created', token , userId: user.id });
+            return res.status(200).json({ message: 'User Created', token , user_id: user.id });
           }
         );
   } catch (err) {
@@ -51,7 +51,7 @@ exports.login = async (req, res) => {
           return res.status(500).json({ error: 'Error comparing passwords' });
         }
         jwt.sign(
-          { userId: userExists.id },
+          { user_id: userExists.id },
           process.env.JWT_SECRET,
           { expiresIn: '1h' },
           (err, token) => {

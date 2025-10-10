@@ -1,31 +1,21 @@
-const {DataTypes} = require('sequelize');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
-const Category = require('./Categories');
-
+const Category = require('./Category');
 
 const SubCategory = sequelize.define('SubCategory', {
-    subcat_id:{
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    cat_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: Category,
-            key: 'cat_id'
-        }
-    },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    }
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, allowNull: false, unique: true },
+  description: { type: DataTypes.TEXT },
+  categoryId: {
+    type: DataTypes.INTEGER,
+    references: { model: Category, key: 'id' },
+    allowNull: false,
+  }
+}, {
+  timestamps: true,
 });
 
+Category.hasMany(SubCategory, { foreignKey: 'categoryId', onDelete: 'CASCADE' });
+SubCategory.belongsTo(Category, { foreignKey: 'categoryId' });
 
-Category.hasMany(SubCategory, { foreignKey: 'cat_id', onDelete: 'CASCADE' });
-SubCategory.belongsTo(Category, { foreignKey: 'cat_id' });
-
-
-module.exports = SubCategory ;
+module.exports = SubCategory;
