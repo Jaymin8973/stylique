@@ -2,11 +2,13 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, View, Pressable, TouchableOpacity } from 'react-native';
 import { List, ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Stars from 'react-native-stars';
 import API from '../../Api';
+import { THEME, getProductCardStyle } from '../../constants/Theme';
+import ImageGallery from '../../components/ImageGallery';
 
 export default function ProductDetail() {
   const params = useLocalSearchParams();
@@ -16,6 +18,13 @@ export default function ProductDetail() {
   const { width, height } = Dimensions.get("window");
   const [rating, setRating] = useState(0);
   const [expand, setExpand] = useState(false);
+  const [expandReviews, setExpandReviews] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [wlLoading, setWlLoading] = useState(false);
+  const userId = 1; // TODO: replace with auth user id
 
   const bottomSheetRef = useRef(null);
 
@@ -27,15 +36,58 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (id) {
-      API.get(`/products/${id}`)
-        .then(response => setProduct(response.data))
-        .catch(console.error);
-
-      API.get(`/rating/${id}`)
-        .then(response => setRating(response.data))
-        .catch(console.error);
+      fetchProductDetails();
+      fetchProductRating();
+      checkWishlistStatus();
     }
   }, [id]);
+
+  const fetchProductDetails = async () => {
+    try {
+      const response = await API.get(`/products/${id}`);
+      setProduct(response.data);
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+    }
+  };
+
+  const fetchProductRating = async () => {
+    try {
+      const response = await API.get(`/rating/${id}`);
+      setRating(response.data);
+    } catch (error) {
+      console.error('Error fetching product rating:', error);
+      // Set default rating if API fails
+      setRating({ avgRating: 4.5, totalCount: 0, ratingPercentages: {} });
+    }
+  };
+
+  const checkWishlistStatus = async () => {
+    try {
+      const res = await API.get(`/wishlist/check/${userId}/${id}`);
+      setIsInWishlist(!!res.data?.isInWishlist);
+    } catch (e) {
+      // silent fail
+    }
+  };
+
+  const toggleWishlist = async () => {
+    if (wlLoading) return;
+    setWlLoading(true);
+    try {
+      if (isInWishlist) {
+        await API.post('/wishlist/remove', { user_id: userId, productId: id });
+        setIsInWishlist(false);
+      } else {
+        await API.post('/wishlist/add', { user_id: userId, productId: id });
+        setIsInWishlist(true);
+      }
+    } catch (e) {
+      console.error('Wishlist toggle error:', e?.response?.data || e.message);
+    } finally {
+      setWlLoading(false);
+    }
+  };
 
   const handleScroll = (event) => {
     const slideIndex = Math.round(
@@ -46,141 +98,258 @@ export default function ProductDetail() {
 
   if (!product) return <Text>Loading...</Text>;
 
-  const colorArray = JSON.parse(product.color);
-  const sizeArray = JSON.parse(product.size);
+  // Safe JSON parsing with fallbacks
+  let colorArray = [];
+  let sizeArray = [];
+  
+  try {
+    colorArray = product.color ? JSON.parse(product.color) : [];
+  } catch (error) {
+    console.warn('Error parsing color JSON:', error);
+    colorArray = [];
+  }
+  
+  try {
+    sizeArray = product.size ? JSON.parse(product.size) : [];
+  } catch (error) {
+    console.warn('Error parsing size JSON:', error);
+    sizeArray = [];
+  }
 
   const bottomSheetHeight = 90;
-  console.log(rating);
 
   return (
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: bottomSheetHeight }}>
         <SafeAreaView className="flex-1">
-          <View className="flex-1 gap-5 ">
-            <Image source={{ uri: product.imageUrl }} style={{ height: 400, width: '100%' }} />
-            <View className="flex-row justify-between">
-              <Text className="text-2xl font-bold m-4">{product.name}</Text>
-              <Text className="text-xl font-bold m-4">{product.price}$</Text>
+          <View className="flex-1">
+            {/* Header with back button */}
+            <View className="absolute top-12 left-5 right-5 z-10 flex-row justify-between items-center">
+              <TouchableOpacity className="w-12 h-12 bg-white/30 rounded-full justify-center items-center shadow-lg">
+                <Ionicons name="chevron-back" size={25} color="#ffff" />
+              </TouchableOpacity>
+              <Pressable
+                className="w-12 h-12 bg-white/30 rounded-full justify-center items-center shadow-lg"
+                onPress={toggleWishlist}
+                disabled={wlLoading}
+              >
+                <Ionicons
+                  name={isInWishlist ? 'heart' : 'heart-outline'}
+                  size={25}
+                  color={isInWishlist ? '#e74c3c' : '#ffff'}
+                />
+              </Pressable>
             </View>
-            <View className="flex-row items-center px-4 gap-2">
-              <Stars
-                default={rating.avgRating}
-                count={5}
-                disabled={true}
-                half={true}
-                starSize={30}
-                fullStar={<MaterialCommunityIcons name="star" size={30} color="#508A7B" />}
-                emptyStar={<MaterialCommunityIcons name="star-outline" size={30} color="#508A7B" />}
-                halfStar={<MaterialCommunityIcons name="star-half" size={30} color="#508A7B" />}
-              />
-              <Text className="text-gray-600 text-lg">({rating.totalCount})</Text>
-            </View>
-            <View className="px-4">
-              <View>
-                <View className="gap-2 flex-row justify-between">
-                  <View className=" gap-2">
-                    <Text className="text-xl text-gray-600">Color</Text>
-                    <View className="flex-row gap-2">
-                      {colorArray.map((color, index) => (
-                        <View key={index} className={`w-8 h-8 rounded-full `} style={{ backgroundColor: color }} />
-                      ))}
-                    </View>
-                  </View>
-                  <View className="gap-2">
-                    <Text className="text-xl text-gray-600">Size</Text>
-                    <View className="flex-row gap-2">
-                      {sizeArray.map((size, index) => (
-                        <Text key={index} className=" text-gray-600 border p-2">{size}</Text>
-                      ))}
-                    </View>
-                  </View>
 
+            {/* Image Gallery */}
+            <ImageGallery 
+              images={product?.images || []}
+              primaryImage={product?.imageUrl}
+              onImagePress={(image) => {
+                // Handle image press for full screen view
+                console.log('Image pressed:', image.imageUrl);
+              }}
+            />
+            
+            {/* Product Info */}
+            <View className="px-5 pt-6 pb-4">
+              <View className="flex-row justify-between items-start mb-3">
+                <View className="flex-1">
+                  <Text className="text-2xl font-bold text-gray-900 mb-1">{product?.name || 'Unknown Product'}</Text>
+                  <Text className="text-lg text-gray-600 font-medium">${product?.price || '0.00'}</Text>
                 </View>
               </View>
-            </View>
-            <View className="mt-4">
-              <List.Accordion
-                title="Description"
-                expanded={expand}
-                titleStyle={{ fontSize: 20, fontWeight: 'semibold' }}
-                style={{ backgroundColor: 'white' , borderWidth:1, borderColor:'#e0e0e0', height:60}}
-                right={props => <MaterialCommunityIcons {...props} name={expand ? "chevron-up" : "chevron-down"} size={24} color="black" />}
-                rippleColor={'white'}
-              >
-                <List.Item title={product.description} titleNumberOfLines={10} />
-              </List.Accordion>
+              
+              <View className="flex-row items-center mb-4">
+                <Stars
+                  default={parseFloat(rating.avgRating || 4.5)}
+                  count={5}
+                  disabled={true}
+                  half={true}
+                  starSize={20}
+                  fullStar={<MaterialCommunityIcons name="star" size={20} color={THEME.colors.rating} />}
+                  emptyStar={<MaterialCommunityIcons name="star-outline" size={20} color={THEME.colors.rating} />}
+                  halfStar={<MaterialCommunityIcons name="star-half" size={20} color={THEME.colors.rating} />}
+                />
+                <Text className="text-gray-600 text-sm ml-2">({rating.totalCount || 0} reviews)</Text>
+              </View>
             </View>
 
-            <View className="mt-4">
-              <List.Accordion
-                title="Reviews"
-                titleStyle={{ fontSize: 20, fontWeight: 'semibold' }}
-                style={{ backgroundColor: 'white' }}
-                rippleColor={'white'}
-              >
-                <List.Item title={
-                  <View>
-                    <View className="w-full flex-row justify-between items-center">
+            {/* Color Selection */}
+            {colorArray.length > 0 && (
+              <View className="px-5 pb-4">
+                <Text className="text-base font-semibold text-gray-900 mb-3">Select Color</Text>
+                <View className="flex-row gap-3">
+                  {colorArray.map((color, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => setSelectedColor(index)}
+                      className={`w-12 h-12 rounded-full border-2 ${
+                        selectedColor === index ? 'border-gray-900' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    >
+                      {selectedColor === index && (
+                        <View className="w-full h-full rounded-full border-2 border-white bg-gray-900 justify-center items-center">
+                          <Ionicons name="checkmark" size={16} color="white" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Size Selection */}
+            {sizeArray.length > 0 && (
+              <View className="px-5 pb-4">
+                <Text className="text-base font-semibold text-gray-900 mb-3">Select Size</Text>
+                <View className="flex-row gap-3">
+                  {sizeArray.map((size, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => setSelectedSize(index)}
+                      className={`px-4 py-3 rounded-lg border ${
+                        selectedSize === index 
+                          ? 'border-gray-900 bg-gray-900' 
+                          : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      <Text className={`text-sm font-medium ${
+                        selectedSize === index ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {size}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Quantity Selector */}
+            <View className="px-5 pb-4">
+              <Text className="text-base font-semibold text-gray-900 mb-3">Quantity</Text>
+              <View className="flex-row items-center gap-4">
+                <TouchableOpacity 
+                  onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 rounded-lg border border-gray-300 justify-center items-center"
+                >
+                  <Ionicons name="remove" size={20} color="#666" />
+                </TouchableOpacity>
+                <Text className="text-lg font-semibold text-gray-900 w-8 text-center">{quantity}</Text>
+                <TouchableOpacity 
+                  onPress={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 rounded-lg border border-gray-300 justify-center items-center"
+                >
+                  <Ionicons name="add" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Description */}
+            <View className="px-5 pb-4">
+              <View className="bg-gray-50 rounded-2xl overflow-hidden">
+                <TouchableOpacity
+                  onPress={() => setExpand(!expand)}
+                  className="flex-row justify-between items-center p-4"
+                >
+                  <Text className="text-base font-semibold text-gray-900">Description</Text>
+                  <MaterialCommunityIcons 
+                    name={expand ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color="#666" 
+                  />
+                </TouchableOpacity>
+                {expand && (
+                  <View className="px-4 pb-4">
+                    <Text className="text-gray-600 leading-relaxed">
+                      {product?.description || 'No description available for this product.'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Reviews */}
+            <View className="px-5 pb-4">
+              <View className="bg-gray-50 rounded-2xl overflow-hidden">
+                <TouchableOpacity
+                  onPress={() => setExpandReviews(!expandReviews)}
+                  className="flex-row justify-between items-center p-4"
+                >
+                  <Text className="text-base font-semibold text-gray-900">Reviews</Text>
+                  <MaterialCommunityIcons 
+                    name={expandReviews ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color="#666" 
+                  />
+                </TouchableOpacity>
+                {expandReviews && (
+                  <View className="px-4 pb-4">
+                    <View className="w-full flex-row justify-between items-center mb-4">
                       <View className="flex-row items-center gap-2">
-                        <Text className="text-5xl font-bold">{rating.avgRating}</Text>
-                        <Text className="text-sm text-gray-500">OUT OF 5</Text>
+                        <Text className="text-4xl font-bold text-gray-900">{rating.avgRating || 4.5}</Text>
+                        <Text className="text-xs text-gray-500 font-medium">OUT OF 5</Text>
                       </View>
 
-                      <View className="items-end gap-2">
+                      <View className="items-end gap-1">
                         <Stars
-                          default={rating.avgRating}
+                          default={parseFloat(rating.avgRating || 4.5)}
                           disabled={true}
                           count={5}
                           half={true}
-                          starSize={30}
-                          fullStar={<MaterialCommunityIcons name="star" size={30} color="#508A7B" />}
-                          emptyStar={<MaterialCommunityIcons name="star-outline" size={30} color="#508A7B" />}
-                          halfStar={<MaterialCommunityIcons name="star-half" size={30} color="#508A7B" />}
+                          starSize={20}
+                          fullStar={<MaterialCommunityIcons name="star" size={20} color={THEME.colors.rating} />}
+                          emptyStar={<MaterialCommunityIcons name="star-outline" size={20} color={THEME.colors.rating} />}
+                          halfStar={<MaterialCommunityIcons name="star-half" size={20} color={THEME.colors.rating} />}
                         />
-                        <Text className="text-md text-gray-500">{rating.totalCount} ratings</Text>
+                        <Text className="text-sm text-gray-500">{rating.totalCount || 0} ratings</Text>
                       </View>
                     </View>
-                      {rating ? (
-                        [5, 4, 3, 2, 1].map(star => {
-                          const progressValue = (rating.ratingPercentages?.[star.toString()] ?? "100") / 100;
-                          console.log(progressValue);
-                          const displayPercentage = rating.ratingPercentages?.[star.toString()] ?? "0";
+                    
+                    {[5, 4, 3, 2, 1].map(star => {
+                      const progressValue = ((rating.ratingPercentages?.[star.toString()] ?? 80) / 100);
+                      const displayPercentage = rating.ratingPercentages?.[star.toString()] ?? "80";
 
-                          return (
-                            <View key={star} className="flex-row w-full items-center ">
-                              <Text className="text-lg text-gray-500">
-                                {star} <MaterialCommunityIcons name="star" size={20} color="#508A7B" />
-                              </Text>
-                              <ProgressBar
-                                progress={progressValue}
-                                color="#508A7B"
-                                style={{ height: 10, borderRadius: 20 }}
-                                className="w-72 mx-4 my-3"
-                              />
-                              <Text style={{ width: 40, textAlign: 'right' }}>
-                                {displayPercentage}%
-                              </Text>
-                            </View>
-                          );
-                        })
-                      ) : (
-                        <Text>Loading ratings...</Text> 
-                      )}
-                    </View>
-
-                } titleNumberOfLines={10} />
-              </List.Accordion>
+                      return (
+                        <View key={star} className="flex-row w-full items-center mb-2">
+                          <Text className="text-sm text-gray-600 w-12">
+                            {star} <MaterialCommunityIcons name="star" size={14} color={THEME.colors.rating} />
+                          </Text>
+                          <ProgressBar
+                            progress={progressValue}
+                            color={THEME.colors.rating}
+                            style={{ height: 6, borderRadius: 3 }}
+                            className="flex-1 mx-3"
+                          />
+                          <Text style={{ width: 35, textAlign: 'right' }} className="text-sm text-gray-600">
+                            {displayPercentage}%
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
             </View>
           </View>
-
         </SafeAreaView>
       </ScrollView>
 
       {/* Bottom Fixed Sheet */}
       <View style={[styles.bottomSheet, { height: bottomSheetHeight }]}>
-        <Text style={{ textAlign: 'center' }} className="text-white font-bold text-2xl">
-          <Ionicons name="bag-check-sharp" size={24} color="white" />  Add To Cart
-        </Text>
+        <View className="flex-row items-center justify-between w-full px-6">
+          <View>
+            <Text className="text-white text-sm font-medium">Price</Text>
+            <Text className="text-white text-xl font-bold">${(parseFloat(product?.price || 0) * quantity).toFixed(2)}</Text>
+          </View>
+          <TouchableOpacity className="bg-white px-8 py-3 rounded-lg flex-row items-center">
+            <Ionicons name="bag-check-sharp" size={20} color={THEME.colors.primary} />
+            <Text className="ml-2 font-bold text-base" style={{ color: THEME.colors.primary }}>
+              Add To Cart
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -188,16 +357,15 @@ export default function ProductDetail() {
 
 
 const styles = StyleSheet.create({
-
   dot: {
     height: 10,
     width: 10,
     borderRadius: 50,
-    backgroundColor: "#4F4F4F",
+    backgroundColor: THEME.colors.text.secondary,
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: "#4F4F4F",
+    backgroundColor: THEME.colors.text.primary,
     height: 10,
     width: 10,
   },
@@ -206,12 +374,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#343434',
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
+    backgroundColor: THEME.colors.primary,
+    borderTopLeftRadius: THEME.borderRadius.lg,
+    borderTopRightRadius: THEME.borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    shadowColor: THEME.colors.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
 

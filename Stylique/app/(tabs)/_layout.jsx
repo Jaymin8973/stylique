@@ -69,14 +69,13 @@ const API = axios.create({
     const router = useRouter();
     return (
       <Tabs screenOptions={{
-        tabBarActiveBackgroundColor: 'trasperent',
+        tabBarActiveBackgroundColor: 'transparent',
         tabBarActiveTintColor: 'black',
         tabBarInactiveTintColor: 'lightgray',
-        tabBarButton: (props) => (
-      <TouchableWithoutFeedback {...props}>
-        <View className="flex-1 justify-center items-center">{props.children}</View>
-      </TouchableWithoutFeedback>
-    ),
+        tabBarShowLabel: false,
+        tabBarItemStyle: { justifyContent: 'center', alignItems: 'center' },
+        tabBarIconStyle: { margin: 10 },
+        tabBarStyle: { paddingTop: 6, paddingBottom: 10, height: 80 },
       }}>
         <Tabs.Screen
           name="index"
@@ -139,6 +138,7 @@ const API = axios.create({
               <Feather name="user" size={24} color={color} />
             ),
             headerShown:false
+            
           }}
         />
 

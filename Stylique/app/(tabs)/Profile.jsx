@@ -116,7 +116,7 @@ const Profile = () => {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => (router.push("Test"))}>
+            <TouchableOpacity onPress={() => (router.push("Wishlist"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
                   <Octicons name="heart-fill" size={24} color="black" />

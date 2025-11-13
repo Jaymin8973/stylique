@@ -2,12 +2,15 @@ import { SimpleLineIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { Image } from 'expo-image';
+import BannerCarousel from '../../components/BannerCarousel';
+
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IpAddress from '../../Config.json';
 import data from '../../data.json';
+
 const Home = () => {
 
   const [fetchedCategories, setFetchedCategories] = useState([]);
@@ -64,12 +67,7 @@ const Home = () => {
             ))}
           </View>
             </ScrollView>
-          <View className=" m-4 rounded-2xl" style={{ height: 220 }}>
-            <Image
-              source={require('../../assets/images/img_01.jpg')}
-              style={{ height: 220, borderRadius: 15 }}
-            />
-          </View>
+          <BannerCarousel onPressCta={() => router.push('/AlllProducts')} />
 
           <View className="flex-row  items-center px-5 mt-3 justify-between">
             <Text className="text-3xl font-bold">Feature Products</Text>

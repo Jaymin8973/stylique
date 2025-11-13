@@ -143,21 +143,30 @@ const _layout = () => {
           <Text className="text-2xl font-bold">All Products</Text>
         ),
         headerBackground: () => (
-          <View style={{ backgroundColor: 'white' }} />
+          <View style={{ 
+            backgroundColor: 'white', 
+            flex: 1,
+          }} />
         ),
       })} />
 
 
    <Stack.Screen name='ProductDetail'  options={({ navigation }) => ({
+       headerShown:false,
+      })} />
+
+      <Stack.Screen name='Wishlist' options={({ navigation }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />
           </Pressable>
         ),
         headerTitle: () => (
-          <Text className="text-2xl font-bold"></Text>
+          <Text className="text-2xl font-bold">My Wishlist</Text>
         ),
-        headerTransparent: true,
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'white' , flex:1 }} />
+        ),
       })} />
 
        <Stack.Screen name='Test' options={({ navigation }) => ({
