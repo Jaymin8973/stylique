@@ -13,34 +13,35 @@ import data from '../../data.json';
 
 const Home = () => {
 
-  const [fetchedCategories, setFetchedCategories] = useState([]);
-  const icons = ["symbol-female", "symbol-male", "eyeglass", "wallet" ,"game-controller" ]
+  // const [fetchedCategories, setFetchedCategories] = useState([]);
+  const icons = ["symbol-female", "symbol-male", "eyeglass", "game-controller" ]
   const Navigation = useNavigation();
   const [Categories, setCategories] = useState("men");
 
 
+  const fetchedCategories = ["clothing","footwear","accessories","Sports"]
+
 
   useEffect(() => {
-    fetchCategories();
+    // fetchCategories();
   }, [])
 
   const API = axios.create({
   baseURL: `http://${IpAddress.IpAddress}:3000`,
 });
 
-  const fetchCategories = async () => {
-    try {
-      const response = await API.get('/categories/');
-      setFetchedCategories(response.data.map(category => (category.name)));
-    } catch (error) {
-      if (error.response) {
-        console.log('Error response:', error.response.data);
-      }
-      console.log('Error message:', error.message);
-    }
-  }
+  // const fetchCategories = async () => {
+  //   try {
+  //     const response = await API.get('/categories/');
+  //     setFetchedCategories(response.data.map(category => (category.name)));
+  //   } catch (error) {
+  //     if (error.response) {
+  //       console.log('Error response:', error.response.data);
+  //     }
+  //     console.log('Error message:', error.message);
+  //   }
+  // }
 
-  console.log(fetchedCategories);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

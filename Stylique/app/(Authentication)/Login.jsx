@@ -17,7 +17,7 @@ const Login = () => {
   const router = useRouter();
   const [Loading , setLoading] = useState(false);
   const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:3000`,
+  baseURL: `http://${IpAddress.IpAddress}:5001`,
 });
 
  useEffect(() => {
@@ -44,10 +44,12 @@ const Login = () => {
     onSubmit: async (values) => {
       try {
         setLoading(true);
-        const response = await API.post(`/users/login`, values);
+        const response = await API.post(`/api/auth/login`, values);
+        console.log(response.data);
         const token = response.data.token;
+        const userId = String(response.data.user.id);
         await AsyncStorage.setItem('userToken', token);
-        await SecureStore.setItemAsync('userEmail', values.email);
+        await SecureStore.setItemAsync('userId', userId);
         Toast.show({
           type: 'success',
           text1: 'Login Successful',
@@ -56,6 +58,7 @@ const Login = () => {
         setLoading(false);
         router.replace('(tabs)');
       } catch (error) {
+        console.log(error.message)
         if (error.response) {
           alert(error.response.data.message || "Server error");
         } else if (error.request) {

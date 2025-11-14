@@ -123,12 +123,25 @@ const API = axios.create({
         />
         <Tabs.Screen
           name="Cart"
-          options={{
-            title: "",
-            tabBarIcon: ({ color, size }) => (
+          options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 bg-white ms-5" onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Your Cart</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ 
+            backgroundColor: 'transparent', 
+            flex: 1,
+          }} />
+        ),
+         tabBarIcon: ({ color, size }) => (
               <SimpleLineIcons name="handbag" size={24} color={color} />
             ),
-          }}
+      })} 
         />
         <Tabs.Screen
           name="Profile"

@@ -15,7 +15,7 @@ const Profile = () => {
   const [email , setEmail] = useState(null);
   const [Loading , setLoading] = useState(false);
   const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:3000`,
+  baseURL: `http://${IpAddress.IpAddress}:5001`,
 });
   useEffect(() => {
     FetchData();
@@ -24,13 +24,15 @@ const Profile = () => {
   const FetchData = async () => {
     try {
       setLoading(true);
-      const email = await SecureStore.getItemAsync('userEmail');
-      const res = await API.post(`/users/user`, { email });
-      const Name = res.data.user.firstname + " " + res.data.user.lastname;
-      setImage(res.data.user.image);
+      const UserID = await SecureStore.getItemAsync('userId');
+      const res = await API.get(`/api/user/${UserID}`);
+      console.log(res.data)
+      const Name = res.data.Username;
+      setImage("https://www.bing.com/th/id/OIP.f3DM2upCo-p_NPRwBAwbKQHaHa?w=180&h=211&c=8&rs=1&qlt=90&o=6&cb=ucfimg1&pid=3.1&rm=2&ucfimg=1");
       setName(Name);
-      setEmail(res.data.user.email);
+      setEmail(res.data.Email);
     } catch (err) {
+      console.log(err.message);
       alert(err?.response?.data?.message || err.message);
     } finally {
       setLoading(false);
@@ -39,8 +41,6 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      
-      
     await SecureStore.deleteItemAsync('userEmail');
     await AsyncStorage.removeItem('userToken');
     router.replace('Login');
@@ -74,44 +74,44 @@ const Profile = () => {
             <TouchableOpacity
               onPress={() => (router.push("EditProfile"))}
             >
-              <AntDesign name="setting" size={24} color="black" />
+              <AntDesign name="setting" size={24} color="#343434" />
             </TouchableOpacity>
           </View>
           <View className="rounded-2xl border border-gray-300  px-4">
             <TouchableOpacity onPress={() => (router.push("Address"))}>
               <View className="flex-row mt-10 items-center justify-between border-b border-gray-300 pb-3 ">
                 <View className="flex-row gap-3 items-center">
-                  <Entypo name="location-pin" size={24} color="black" />
+                  <Entypo name="location-pin" size={24} color="#343434" />
                   <Text className="text-2xl">Address</Text>
                 </View>
                 <View>
-                  <AntDesign name="right" size={24} color="black" />
+                  <AntDesign name="right" size={24} color="#343434" />
                 </View>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => (router.push("Payment"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                  <Ionicons name="wallet" size={24} color="black" />
+                  <Ionicons name="wallet" size={24} color="#343434" />
 
                   <Text className="text-2xl">Payment method</Text>
 
                 </View>
                 <View>
-                  <AntDesign name="right" size={24} color="black" />
+                  <AntDesign name="right" size={24} color="#343434" />
                 </View>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => (router.push("Voucher"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                  <AntDesign name="gift" size={24} color="black" />
+                  <AntDesign name="gift" size={24} color="#343434" />
 
                   <Text className="text-2xl">Voucher</Text>
 
                 </View>
                 <View>
-                  <AntDesign name="right" size={24} color="black" />
+                  <AntDesign name="right" size={24} color="#343434" />
                 </View>
               </View>
             </TouchableOpacity>
@@ -119,13 +119,13 @@ const Profile = () => {
             <TouchableOpacity onPress={() => (router.push("Wishlist"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                  <Octicons name="heart-fill" size={24} color="black" />
+                  <Octicons name="heart-fill" size={24} color="#343434" />
 
                   <Text className="text-2xl">My Wishlist</Text>
 
                 </View>
                 <View>
-                  <AntDesign name="right" size={24} color="black" />
+                  <AntDesign name="right" size={24} color="#343434" />
                 </View>
               </View>
             </TouchableOpacity>
@@ -133,18 +133,18 @@ const Profile = () => {
             <TouchableOpacity onPress={() => (router.push("Feedback"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                  <Octicons name="star-fill" size={24} color="black" />
+                  <Octicons name="star-fill" size={24} color="#343434" />
                   <Text className="text-2xl">Rate this app</Text>
                 </View>
                 <View>
-                  <AntDesign name="right" size={24} color="black" />
+                  <AntDesign name="right" size={24} color="#343434" />
                 </View>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleLogout}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                  <MaterialIcons name="logout" size={24} color="black" />
+                  <MaterialIcons name="logout" size={24} color="#343434" />
                   <Text className="text-2xl">Log out</Text>
                 </View>
 

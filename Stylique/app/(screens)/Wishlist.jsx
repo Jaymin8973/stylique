@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import API from '../../Api';
+import * as SecureStore from 'expo-secure-store';
 
 const Wishlist = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -13,16 +14,26 @@ const Wishlist = () => {
   const [activeTab, setActiveTab] = useState('all');
   const router = useRouter();
 
-  // Replace with real user id from auth when available
-  const userId = 1;
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    fetchWishlist();
+    const loadUserId = async () => {
+      try {
+        const idStr = await SecureStore.getItemAsync('userId');
+        if (idStr) setUserId(Number(idStr));
+      } catch {}
+    };
+    loadUserId();
   }, []);
+
+  useEffect(() => {
+    if (userId) fetchWishlist();
+  }, [userId]);
 
   const fetchWishlist = async () => {
     try {
       setLoading(true);
+      if (!userId) return;
       const res = await API.get(`/wishlist/user/${userId}`);
       setWishlistItems(res.data || []);
     } catch (e) {
@@ -48,9 +59,9 @@ const Wishlist = () => {
 
   const renderCard = ({ item }) => (
     <View style={styles.card}>
-      <Pressable onPress={() => goProduct(item.Product.id)}>
+      <Pressable onPress={() => goProduct(item.product.id)}>
         <View style={styles.cardImgWrap}>
-          <Image source={{ uri: item.Product.imageUrl }} style={styles.cardImg} />
+          <Image source={{ uri: item.product.imageUrl }} style={styles.cardImg} />
           <TouchableOpacity style={styles.heartBadge} onPress={() => removeFromWishlist(item.productId)} disabled={!!removing[item.productId]}>
             {removing[item.productId] ? (
               <ActivityIndicator size="small" color="#e74c3c" />
@@ -60,12 +71,9 @@ const Wishlist = () => {
           </TouchableOpacity>
         </View>
         <View style={styles.cardBody}>
-          <Text style={styles.title} numberOfLines={1}>{item.Product.name}</Text>
+          <Text style={styles.title} numberOfLines={1}>{item.product.productName}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>${Number(item.Product.price).toFixed(2)}</Text>
-            {!!item.Product.oldPrice && (
-              <Text style={styles.oldPrice}>${item.Product.oldPrice}</Text>
-            )}
+            <Text style={styles.price}>₹{parseFloat(item.product.sellingPrice || '0').toFixed(2)}</Text>
           </View>
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={14} color="#2ecc71" />

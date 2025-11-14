@@ -2,7 +2,7 @@
 export const THEME = {
   // Colors
   colors: {
-    primary: '#000000',
+    primary: '#343434',
     secondary: '#FFFFFF',
     accent: '#10B981', // Green for stock badges
     background: '#FFFFFF',
@@ -33,7 +33,7 @@ export const THEME = {
     sm: 8,
     md: 12,
     lg: 16,
-    xl: 20,
+    xl: 24,
     full: 9999
   },
 

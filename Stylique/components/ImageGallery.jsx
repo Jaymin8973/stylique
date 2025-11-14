@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   },
   imageSlide: {
     width: width,
-    height: 400,
+    height: 500,
   },
   mainImage: {
     width: '100%',

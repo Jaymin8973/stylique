@@ -1,18 +1,21 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, View, Pressable, TouchableOpacity } from 'react-native';
-import { List, ProgressBar } from 'react-native-paper';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Stars from 'react-native-stars';
 import API from '../../Api';
-import { THEME, getProductCardStyle } from '../../constants/Theme';
 import ImageGallery from '../../components/ImageGallery';
+import { THEME } from '../../constants/Theme';
+import Toast from 'react-native-toast-message';
+import * as SecureStore from 'expo-secure-store';
+import { StatusBar } from 'expo-status-bar';
 
 export default function ProductDetail() {
   const params = useLocalSearchParams();
   const id = params.id;
+  const router = useRouter();
   const [product, setProduct] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { width, height } = Dimensions.get("window");
@@ -24,7 +27,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [wlLoading, setWlLoading] = useState(false);
-  const userId = 1; // TODO: replace with auth user id
+  const [adding, setAdding] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   const bottomSheetRef = useRef(null);
 
@@ -38,13 +42,26 @@ export default function ProductDetail() {
     if (id) {
       fetchProductDetails();
       fetchProductRating();
-      checkWishlistStatus();
     }
   }, [id]);
 
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const idStr = await SecureStore.getItemAsync('userId');
+        if (idStr) setUserId(Number(idStr));
+      } catch {}
+    };
+    loadUserId();
+  }, []);
+
+  useEffect(() => {
+    if (id && userId) checkWishlistStatus();
+  }, [id, userId]);
+
   const fetchProductDetails = async () => {
     try {
-      const response = await API.get(`/products/${id}`);
+      const response = await API.get(`/api/products/pid/${id}`);
       setProduct(response.data);
     } catch (error) {
       console.error('Error fetching product details:', error);
@@ -64,6 +81,7 @@ export default function ProductDetail() {
 
   const checkWishlistStatus = async () => {
     try {
+      if (!userId) return;
       const res = await API.get(`/wishlist/check/${userId}/${id}`);
       setIsInWishlist(!!res.data?.isInWishlist);
     } catch (e) {
@@ -75,6 +93,7 @@ export default function ProductDetail() {
     if (wlLoading) return;
     setWlLoading(true);
     try {
+      if (!userId) return;
       if (isInWishlist) {
         await API.post('/wishlist/remove', { user_id: userId, productId: id });
         setIsInWishlist(false);
@@ -94,6 +113,23 @@ export default function ProductDetail() {
       event.nativeEvent.contentOffset.x / width
     );
     setCurrentIndex(slideIndex);
+  };
+
+  const handleAddToCart = async () => {
+    if (!id || adding) return;
+    try {
+      setAdding(true);
+      await API.post('/api/cart/add', {
+        productId: Number(id),
+        quantity,
+      });
+      // Toast.show({ type: 'success', text1: 'Added to cart' });
+      // router.push('(tabs)/Cart'); // optional navigation
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Failed to add to cart' });
+    } finally {
+      setAdding(false);
+    }
   };
 
   if (!product) return <Text>Loading...</Text>;
@@ -121,6 +157,7 @@ export default function ProductDetail() {
   return (
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: bottomSheetHeight }}>
+        <StatusBar style='dark' />
         <SafeAreaView className="flex-1">
           <View className="flex-1">
             {/* Header with back button */}
@@ -152,11 +189,11 @@ export default function ProductDetail() {
             />
             
             {/* Product Info */}
-            <View className="px-5 pt-6 pb-4">
+            <View className="px-5 pt-6 pb-4 ">
               <View className="flex-row justify-between items-start mb-3">
                 <View className="flex-1">
-                  <Text className="text-2xl font-bold text-gray-900 mb-1">{product?.name || 'Unknown Product'}</Text>
-                  <Text className="text-lg text-gray-600 font-medium">${product?.price || '0.00'}</Text>
+                  <Text className="text-2xl font-bold text-gray-900 mb-1">{product?.productName || 'Unknown Product'}</Text>
+                  <Text className="text-lg text-gray-600 font-medium">₹{product?.sellingPrice || '0.00'}</Text>
                 </View>
               </View>
               
@@ -230,19 +267,20 @@ export default function ProductDetail() {
             <View className="px-5 pb-4">
               <Text className="text-base font-semibold text-gray-900 mb-3">Quantity</Text>
               <View className="flex-row items-center gap-4">
-                <TouchableOpacity 
+                <Pressable 
                   onPress={() => setQuantity(Math.max(1, quantity - 1))}
                   className="w-10 h-10 rounded-lg border border-gray-300 justify-center items-center"
                 >
                   <Ionicons name="remove" size={20} color="#666" />
-                </TouchableOpacity>
+                </Pressable>
                 <Text className="text-lg font-semibold text-gray-900 w-8 text-center">{quantity}</Text>
-                <TouchableOpacity 
+                <Pressable 
                   onPress={() => setQuantity(quantity + 1)}
+                  disabled={product?.totalStock == quantity}
                   className="w-10 h-10 rounded-lg border border-gray-300 justify-center items-center"
                 >
                   <Ionicons name="add" size={20} color="#666" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
 
@@ -341,9 +379,9 @@ export default function ProductDetail() {
         <View className="flex-row items-center justify-between w-full px-6">
           <View>
             <Text className="text-white text-sm font-medium">Price</Text>
-            <Text className="text-white text-xl font-bold">${(parseFloat(product?.price || 0) * quantity).toFixed(2)}</Text>
+            <Text className="text-white text-xl font-bold">₹{(parseFloat(product?.sellingPrice || 0) * quantity).toFixed(2)}</Text>
           </View>
-          <TouchableOpacity className="bg-white px-8 py-3 rounded-lg flex-row items-center">
+          <TouchableOpacity onPress={handleAddToCart} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
             <Ionicons name="bag-check-sharp" size={20} color={THEME.colors.primary} />
             <Text className="ml-2 font-bold text-base" style={{ color: THEME.colors.primary }}>
               Add To Cart
@@ -375,8 +413,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: THEME.colors.primary,
-    borderTopLeftRadius: THEME.borderRadius.lg,
-    borderTopRightRadius: THEME.borderRadius.lg,
+    borderTopLeftRadius: THEME.borderRadius.xl,
+    borderTopRightRadius: THEME.borderRadius.xl,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -384,7 +422,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 10,
   },
 });
 

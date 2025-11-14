@@ -1,10 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View, TextInput, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import API from '../../Api';
-import { THEME, getSearchBarStyle, getCategoryFilterStyle, getProductCardStyle } from '../../constants/Theme';
+import { THEME } from '../../constants/Theme';
+import * as SecureStore from 'expo-secure-store';
 
 const AlllProducts = () => {
     const [data, setData] = useState([]);
@@ -16,10 +17,9 @@ const AlllProducts = () => {
     const [wishlistItems, setWishlistItems] = useState([]);
     const router = useRouter();
 
-    // Mock user ID - in real app, this would come from authentication
-    const userId = 1;
+    const [userId, setUserId] = useState(null);
 
-    const categories = ['All', 'Men', 'Women', 'Shoes', 'Accessories'];
+    const categories = ['All', "clothing","footwear","accessories","Sports"];
     const sortOptions = [
         { key: 'name', label: 'Name' },
         { key: 'price-low', label: 'Price: Low to High' },
@@ -28,8 +28,18 @@ const AlllProducts = () => {
 
     useEffect(() => {
         fetchProducts();
-        fetchUserWishlist();
+        const loadUserId = async () => {
+          try {
+            const id = await SecureStore.getItemAsync('userId');
+            if (id) setUserId(Number(id));
+          } catch {}
+        };
+        loadUserId();
     }, []);
+
+    useEffect(() => {
+      if (userId) fetchUserWishlist();
+    }, [userId]);
 
     useEffect(() => {
         filterAndSortProducts();
@@ -38,7 +48,7 @@ const AlllProducts = () => {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const response = await API.get('/products');
+            const response = await API.get('api/products/all');
             setData(response.data);
             setFilteredData(response.data);
         } catch (error) {
@@ -51,6 +61,7 @@ const AlllProducts = () => {
 
     const fetchUserWishlist = async () => {
         try {
+            if (!userId) return;
             const response = await API.get(`/wishlist/user/${userId}`);
             const wishlistProductIds = response.data.map(item => item.productId);
             setWishlistItems(wishlistProductIds);
@@ -61,6 +72,7 @@ const AlllProducts = () => {
 
     const toggleWishlist = async (productId) => {
         try {
+            if (!userId) return;
             const isInWishlist = wishlistItems.includes(productId);
             
             if (isInWishlist) {
@@ -83,7 +95,7 @@ const AlllProducts = () => {
         // Filter by search text
         if (searchText) {
             filtered = filtered.filter(item => 
-                item.name.toLowerCase().includes(searchText.toLowerCase())
+                item.productName.toLowerCase().includes(searchText.toLowerCase())
             );
         }
         
@@ -97,7 +109,7 @@ const AlllProducts = () => {
         // Sort products
         switch (sortBy) {
             case 'name':
-                filtered.sort((a, b) => a.name.localeCompare(b.name));
+                filtered.sort((a, b) => a.productName.localeCompare(b.productName));
                 break;
             case 'price-low':
                 filtered.sort((a, b) => a.price - b.price);
@@ -120,6 +132,8 @@ const AlllProducts = () => {
         );
     }
 
+    console.log(data)
+
     return (
         <View className="flex-1 bg-white">
             {/* Fixed Header Section - Absolutely Positioned */}
@@ -127,7 +141,7 @@ const AlllProducts = () => {
                 {/* Search Bar */}
                 <View className="px-5 pt-4 pb-3">
                     <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-3">
-                        <Ionicons name="search" size={20} color="#666" />
+                        <Ionicons name="search" size={20} color="#343434" />
                         <TextInput
                             className="flex-1 ml-3 text-gray-700"
                             placeholder="Search products..."
@@ -153,7 +167,7 @@ const AlllProducts = () => {
                                     onPress={() => setSelectedCategory(category)}
                                     className={`px-5 py-2 rounded-full ${
                                         selectedCategory === category
-                                            ? 'bg-black'
+                                            ? 'bg-[#343434]'
                                             : 'bg-gray-100'
                                     }`}
                                 >
@@ -212,24 +226,34 @@ const AlllProducts = () => {
                                             }} 
                                             style={styles.productImage} 
                                         />
-                                        {(item?.stockQuantity > 0) && (
-                                            <View className="absolute top-2 right-2 bg-green-500 px-2 py-1 rounded-full">
+                                        <Pressable
+                                            onPress={() => toggleWishlist(item?.productId || item?.id)}
+                                            className="absolute top-2 left-2 bg-white/90 rounded-full p-2"
+                                        >
+                                            <Ionicons
+                                                name={wishlistItems.includes(item?.productId || item?.id) ? 'heart' : 'heart-outline'}
+                                                size={18}
+                                                color={wishlistItems.includes(item?.productId || item?.id) ? '#e74c3c' : '#343434'}
+                                            />
+                                        </Pressable>
+                                        {(item?.totalStock > 0) && (
+                                            <View className="absolute top-2 right-2 bg-[#343434] px-2 py-1 rounded-full">
                                                 <Text className="text-white text-xs font-medium">
-                                                    In Stock
+                                                   {item?.totalStock > 10 ? 'In Stock' : 'Limited'}
                                                 </Text>
                                             </View>
                                         )}
                                     </View>
                                     <View className="p-3">
                                         <Text className="font-semibold text-gray-800 mb-1" numberOfLines={1}>
-                                            {item?.name || 'Unknown Product'}
+                                            {item?.productName || 'Unknown Product'}
                                         </Text>
                                         <Text className="text-sm text-gray-500 mb-2">
                                             {item?.brand || 'Stylique'}
                                         </Text>
                                         <View className="flex-row justify-between items-center">
                                             <Text className="text-lg font-bold text-gray-900">
-                                                ${item?.price || '0.00'}
+                                                ₹{item?.sellingPrice || '0.00'}
                                             </Text>
                                             <View className="flex-row items-center">
                                                 <Ionicons name="star" size={14} color="#FFA500" />
@@ -257,7 +281,7 @@ const styles = StyleSheet.create({
     },
     productImage: {
         width: '100%',
-        height: 180,
+        height: 200,
         resizeMode: 'cover',
     },
 });
