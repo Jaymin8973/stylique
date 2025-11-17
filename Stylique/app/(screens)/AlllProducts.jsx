@@ -15,6 +15,7 @@ const AlllProducts = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [sortBy, setSortBy] = useState('name');
     const [wishlistItems, setWishlistItems] = useState([]);
+    const [ratings, setRatings] = useState({});
     const router = useRouter();
 
     const [userId, setUserId] = useState(null);
@@ -45,6 +46,18 @@ const AlllProducts = () => {
         filterAndSortProducts();
     }, [data, searchText, selectedCategory, sortBy]);
 
+    useEffect(() => {
+        if (!filteredData || !filteredData.length) return;
+        const ids = filteredData
+          .map((item) => item?.productId || item?.id)
+          .filter(Boolean);
+        ids.forEach((pid) => {
+            if (!ratings[pid]) {
+                fetchRatingForProduct(pid);
+            }
+        });
+    }, [filteredData, ratings]);
+
     const fetchProducts = async () => {
         try {
             setLoading(true);
@@ -56,6 +69,22 @@ const AlllProducts = () => {
             // Handle error gracefully
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchRatingForProduct = async (productId) => {
+        try {
+            if (!productId) return;
+            const res = await API.get(`/rating/${productId}`);
+            setRatings((prev) => ({
+                ...prev,
+                [productId]: res.data || { avgRating: 0, totalCount: 0 },
+            }));
+        } catch (error) {
+            setRatings((prev) => ({
+                ...prev,
+                [productId]: { avgRating: 0, totalCount: 0 },
+            }));
         }
     };
 
@@ -101,8 +130,9 @@ const AlllProducts = () => {
         
         // Filter by category
         if (selectedCategory !== 'All') {
+            
             filtered = filtered.filter(item => 
-                item.SubCategory?.name === selectedCategory
+                item.category.toLowerCase() === selectedCategory.toLowerCase()
             );
         }
         
@@ -132,7 +162,6 @@ const AlllProducts = () => {
         );
     }
 
-    console.log(data)
 
     return (
         <View className="flex-1 bg-white">
@@ -209,61 +238,69 @@ const AlllProducts = () => {
                         numColumns={2}
                         columnWrapperStyle={{ justifyContent: 'space-between' }}
                         contentContainerStyle={{ paddingBottom: 20 }}
-                        renderItem={({ item, index }) => (
-                            <Pressable
-                                onPress={() => router.push({
-                                    pathname: 'ProductDetail',
-                                    params: { id: item?.productId || item?.id || index }
-                                })}
-                                className="mb-4"
-                                style={{ width: '48%' }}
-                            >
-                                <View className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-                                    <View className="relative">
-                                        <Image 
-                                            source={{ 
-                                                uri: item.imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400' 
-                                            }} 
-                                            style={styles.productImage} 
-                                        />
-                                        <Pressable
-                                            onPress={() => toggleWishlist(item?.productId || item?.id)}
-                                            className="absolute top-2 left-2 bg-white/90 rounded-full p-2"
-                                        >
-                                            <Ionicons
-                                                name={wishlistItems.includes(item?.productId || item?.id) ? 'heart' : 'heart-outline'}
-                                                size={18}
-                                                color={wishlistItems.includes(item?.productId || item?.id) ? '#e74c3c' : '#343434'}
+                        renderItem={({ item, index }) => {
+                            const productId = item?.productId || item?.id || index;
+                            const ratingInfo = ratings[productId];
+                            const avgRating = ratingInfo?.avgRating ?? 0;
+
+                            return (
+                                <Pressable
+                                    onPress={() => router.push({
+                                        pathname: 'ProductDetail',
+                                        params: { id: item?.productId || item?.id || index }
+                                    })}
+                                    className="mb-4"
+                                    style={{ width: '48%' }}
+                                >
+                                    <View className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                                        <View className="relative">
+                                            <Image 
+                                                source={{ 
+                                                    uri: item.imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400' 
+                                                }} 
+                                                style={styles.productImage} 
                                             />
-                                        </Pressable>
-                                        {(item?.totalStock > 0) && (
-                                            <View className="absolute top-2 right-2 bg-[#343434] px-2 py-1 rounded-full">
-                                                <Text className="text-white text-xs font-medium">
-                                                   {item?.totalStock > 10 ? 'In Stock' : 'Limited'}
-                                                </Text>
-                                            </View>
-                                        )}
-                                    </View>
-                                    <View className="p-3">
-                                        <Text className="font-semibold text-gray-800 mb-1" numberOfLines={1}>
-                                            {item?.productName || 'Unknown Product'}
-                                        </Text>
-                                        <Text className="text-sm text-gray-500 mb-2">
-                                            {item?.brand || 'Stylique'}
-                                        </Text>
-                                        <View className="flex-row justify-between items-center">
-                                            <Text className="text-lg font-bold text-gray-900">
-                                                ₹{item?.sellingPrice || '0.00'}
+                                            <Pressable
+                                                onPress={() => toggleWishlist(item?.productId || item?.id)}
+                                                className="absolute top-2 left-2 bg-white/90 rounded-full p-2"
+                                            >
+                                                <Ionicons
+                                                    name={wishlistItems.includes(item?.productId || item?.id) ? 'heart' : 'heart-outline'}
+                                                    size={18}
+                                                    color={wishlistItems.includes(item?.productId || item?.id) ? '#e74c3c' : '#343434'}
+                                                />
+                                            </Pressable>
+                                            {(item?.totalStock > 0) && (
+                                                <View className="absolute top-2 right-2 bg-[#343434] px-2 py-1 rounded-full">
+                                                    <Text className="text-white text-xs font-medium">
+                                                       {item?.totalStock > 10 ? 'In Stock' : 'Limited'}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        <View className="p-3">
+                                            <Text className="font-semibold text-gray-800 mb-1" numberOfLines={1}>
+                                                {item?.productName || 'Unknown Product'}
                                             </Text>
-                                            <View className="flex-row items-center">
-                                                <Ionicons name="star" size={14} color="#FFA500" />
-                                                <Text className="text-xs text-gray-600 ml-1">4.5</Text>
+                                            <Text className="text-sm text-gray-500 mb-2">
+                                                {item?.brand || 'Stylique'}
+                                            </Text>
+                                            <View className="flex-row justify-between items-center">
+                                                <Text className="text-lg font-bold text-gray-900">
+                                                    ₹{item?.sellingPrice || '0.00'}
+                                                </Text>
+                                                <View className="flex-row items-center">
+                                                    <Ionicons name="star" size={14} color="#FFA500" />
+                                                    <Text className="text-xs text-gray-600 ml-1">
+                                                        {avgRating ? avgRating.toFixed(1) : '0.0'}
+                                                    </Text>
+                                                </View>
                                             </View>
                                         </View>
                                     </View>
-                                </View>
-                            </Pressable>
-                        )}
+                                </Pressable>
+                            );
+                        }}
                     />
                 )}
             </View>

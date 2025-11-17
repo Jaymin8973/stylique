@@ -60,13 +60,19 @@ const Checkout = () => {
     }
     try {
       setLoading(true);
-      await API.delete('/api/cart/clear');
       Toast.show({
         type: 'success',
         text1: 'Order placed successfully',
         text2: 'Proceeding to payment...',
       });
-      router.push('Payment');
+      router.push({
+        pathname: 'PaymentMethod',
+        params: {
+          amount: String(subtotal),
+          productPrice: String(subtotal),
+          shipping: '0',
+        },
+      });
     } catch (error) {
       if (error.response) {
         Toast.show({
