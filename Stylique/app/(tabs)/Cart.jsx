@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import API from '../../Api';
 
 const Cart = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
@@ -97,7 +98,6 @@ const Cart = () => {
   }
 
   return (
-    
     <View style={{ flex: 1 }}>
       <FlatList
         data={items}
@@ -110,7 +110,7 @@ const Cart = () => {
           <Text style={styles.subLabel}>Subtotal</Text>
           <Text style={styles.subValue}>₹{Number(subtotal).toFixed(2)}</Text>
         </View>
-        <TouchableOpacity style={styles.checkoutBtn}>
+        <TouchableOpacity style={styles.checkoutBtn} onPress={() => router.push('Checkout')}>
           <Text style={styles.checkoutText}>Checkout</Text>
         </TouchableOpacity>
       </View>

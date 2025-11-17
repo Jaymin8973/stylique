@@ -6,7 +6,7 @@ import { THEME, getSearchBarStyle, getCategoryFilterStyle, getProductCardStyle }
 // Themed Container
 export const ThemedContainer = ({ children, style = {}, className = '' }) => (
   <View 
-    className={`flex-1 bg-white ${className}`}
+    className={`flex-1  ${className}`}
     style={style}
   >
     {children}
@@ -156,7 +156,7 @@ export const ThemedButton = ({
       className={`${buttonStyle.background} ${buttonStyle.textColor} px-6 py-3 rounded-xl font-medium flex-row items-center justify-center ${className}`}
     >
       {icon && <Ionicons name={icon} size={20} className="mr-2" />}
-      <Text>{title}</Text>
+      <Text  className={`${buttonStyle.textColor}`}>{title}</Text>
     </Pressable>
   );
 };

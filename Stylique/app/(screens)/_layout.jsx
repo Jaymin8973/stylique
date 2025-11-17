@@ -1,6 +1,7 @@
 import { AntDesign } from '@expo/vector-icons'
 import { Stack } from 'expo-router'
 import { Pressable, Text, View } from 'react-native'
+import Payment from './PaymentMethod'
 
 const _layout = () => {
   return (
@@ -62,19 +63,21 @@ const _layout = () => {
       })} />
 
 
-      <Stack.Screen name='Payment' options={({ navigation }) => ({
+      <Stack.Screen name='Checkout' options={({ navigation }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />
           </Pressable>
         ),
         headerTitle: () => (
-          <Text className="text-2xl font-bold">Payment</Text>
+          <Text className="text-2xl font-bold">Checkout</Text>
         ),
         headerBackground: () => (
           <View style={{ flex: 1, backgroundColor: 'transparent' }} />
         ),
       })} />
+
+  
 
       <Stack.Screen name='Addnewcard' options={({ navigation }) => ({
         headerLeft: () => (
@@ -106,6 +109,21 @@ const _layout = () => {
 
 
        <Stack.Screen name='AddressForm' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Address</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'transparent' }} />
+        ),
+      })} />
+
+
+      <Stack.Screen name='PaymentMethod' options={({ navigation }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />

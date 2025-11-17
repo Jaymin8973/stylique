@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions, FlatList } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 
 const { width } = Dimensions.get('window');
+const CARD_HEIGHT = 180;
+const DOT_SIZE = 8;
 
 const DEFAULT_BANNERS = [
   {
@@ -31,67 +33,45 @@ const DEFAULT_BANNERS = [
   }
 ];
 
-const DOT_SIZE = 8;
-
 export default function BannerCarousel({
   banners = DEFAULT_BANNERS,
   onPressCta,
   autoPlay = true,
-  interval = 3500,
-  loop = true,
+  interval = 3000,
 }) {
   const listRef = useRef(null);
   const [index, setIndex] = useState(0);
-  const timerRef = useRef(null);
-  const isPausedRef = useRef(false);
+  const autoplayRef = useRef(null);
 
-  // Auto-play
+  const scrollToSlide = (nextIndex) => {
+    listRef.current?.scrollToOffset({
+      offset: nextIndex * width,
+      animated: true,
+    });
+  };
+
+  // Autoplay Logic (rock-solid)
   useEffect(() => {
     if (!autoPlay || banners.length <= 1) return;
-    // clear any existing timer
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      if (isPausedRef.current) return;
-      let next = index + 1;
-      if (next >= banners.length) {
-        if (!loop) return; // stop at last slide if not looping
-        next = 0;
-      }
-      if (listRef.current) {
-        try {
-          listRef.current.scrollToIndex({ index: next, animated: true });
-        } catch (e) {
-          // Fallback to offset if not measured yet
-          listRef.current.scrollToOffset({ offset: next * width, animated: true });
-        }
-      }
-      setIndex(next);
-    }, interval);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [autoPlay, interval, loop, index, banners.length]);
 
-  const viewabilityConfig = { viewAreaCoveragePercentThreshold: 60 };
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems && viewableItems.length > 0) {
-      const i = viewableItems[0].index ?? 0;
-      if (typeof i === 'number') setIndex(i);
-    }
-  }).current;
+    autoplayRef.current = setInterval(() => {
+      const nextIndex = (index + 1) % banners.length;
+      scrollToSlide(nextIndex);
+      setIndex(nextIndex);
+    }, interval);
+
+    return () => clearInterval(autoplayRef.current);
+  }, [index, autoPlay, interval, banners.length]);
 
   return (
     <View style={styles.container}>
       <FlatList
         ref={listRef}
         data={banners}
-        keyExtractor={(item) => String(item.id)}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={{ width }}>
-            <View style={[styles.card, { backgroundColor: item.bg }]}> 
+            <View style={[styles.card, { backgroundColor: item.bg }]}>
               <View style={styles.left}>
                 <Text style={styles.title}>{item.title}</Text>
                 <Text style={styles.subtitle}>{item.subtitle}</Text>
@@ -99,31 +79,31 @@ export default function BannerCarousel({
                   <Text style={styles.ctaText}>{item.cta}</Text>
                 </Pressable>
               </View>
-              <Image source={{ uri: item.image }} style={styles.image} contentFit="cover" />
+
+              <Image
+                source={{ uri: item.image }}
+                style={styles.image}
+                contentFit="cover"
+                pointerEvents="none"
+              />
             </View>
           </View>
         )}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        onTouchStart={() => { isPausedRef.current = true; }}
-        onTouchEnd={() => { isPausedRef.current = false; }}
-        onScrollBeginDrag={() => { isPausedRef.current = true; }}
-        onScrollEndDrag={() => { isPausedRef.current = false; }}
-        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
-        initialScrollIndex={0}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => {
+          const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+          setIndex(newIndex);
+        }}
       />
 
-      {/* indicators */}
+      {/* Dots */}
       <View style={styles.indicators}>
         {banners.map((_, i) => (
           <View
             key={i}
-            style={[
-              styles.dot,
-              i === index ? styles.dotActive : null
-            ]}
+            style={[styles.dot, i === index && styles.dotActive]}
           />
         ))}
       </View>
@@ -131,14 +111,9 @@ export default function BannerCarousel({
   );
 }
 
-const CARD_HEIGHT = 180;
-
 const styles = StyleSheet.create({
   container: {
     marginTop: 8,
-  },
-  cardWrap: {
-    paddingHorizontal: 16,
   },
   card: {
     height: CARD_HEIGHT,
@@ -182,10 +157,9 @@ const styles = StyleSheet.create({
   },
   indicators: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
     gap: 8,
+    marginTop: 10,
   },
   dot: {
     width: DOT_SIZE,
@@ -195,5 +169,5 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: '#6B4B3F',
-  }
+  },
 });

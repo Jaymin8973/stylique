@@ -243,6 +243,7 @@ model users {
   roles        roles     @relation(fields: [RoleID], references: [RoleID], onDelete: Cascade, map: "FK_Users_Roles")
   cart         cart?
   wishlist     wishlist[]
+  address      address[]
 
   @@index([RoleID], map: "FK_Users_Roles")
 }
@@ -303,4 +304,23 @@ model wishlist {
   @@unique([userId, productId], map: "uniq_user_product")
   @@index([userId], map: "idx_wishlist_userId")
   @@index([productId], map: "idx_wishlist_productId")
+}
+
+model address {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  firstName    String
+  lastName     String?
+  mobileNumber String
+  pincode      String
+  houseNo      String
+  street       String
+  city         String
+  state        String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         users    @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_address_user")
+
+  @@index([userId], map: "idx_address_userId")
 }

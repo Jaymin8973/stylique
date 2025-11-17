@@ -91,7 +91,7 @@ export const THEME = {
     // Button
     button: {
       primary: {
-        background: 'bg-black',
+        background: 'bg-[#343434]',
         textColor: 'text-white'
       },
       secondary: {

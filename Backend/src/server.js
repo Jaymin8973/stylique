@@ -7,7 +7,8 @@ import authRouter from './routes/auth.js';
 import userRouter from './routes/user.js';
 import cartRouter from './routes/cart.js';
 import wishlistRouter from './routes/wishlist.js';
-
+import addressRouter from './routes/address.js';
+import paymentRouter from './routes/payment.js';
 
 dotenv.config();
 
@@ -34,7 +35,8 @@ app.use('/api/user', userRouter);
 app.use('/api/cart', cartRouter);
 app.use('/wishlist', wishlistRouter);
 app.use('/api/wishlist', wishlistRouter);
-
+app.use('/api/address', addressRouter);
+app.use('/api/payment', paymentRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

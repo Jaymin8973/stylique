@@ -8,8 +8,13 @@ const ProductApi = {
   },
 
   getAllProducts: async () => {
-    const res = await axiosClient.get("/api/products");
-    return res.data;
+    try {
+      const res = await axiosClient.get("/api/products");
+      return res.data;
+      
+    } catch (error) {
+      console.log(error)
+    }
   },
 
   getProductById: async (id: number) => {

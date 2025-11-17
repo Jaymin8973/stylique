@@ -89,7 +89,7 @@ const Profile = () => {
                 </View>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => (router.push("Payment"))}>
+            <TouchableOpacity onPress={() => (router.push("PaymentMethod"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
                   <Ionicons name="wallet" size={24} color="#343434" />

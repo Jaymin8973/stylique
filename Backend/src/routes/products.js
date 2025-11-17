@@ -4,7 +4,7 @@ import auth from '../middleware/auth.js';
 
 const router = Router();
 // Protect all product routes
-//router.use(auth);
+//  router.use(auth);
 
 
 
@@ -24,7 +24,7 @@ router.get('/', auth , async (req, res) => {
     });
     res.json(products);
   } catch (e) {
-    console.error(e);
+    console.error(e.message);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
@@ -96,7 +96,6 @@ router.get('/pid/:id', async (req, res) =>{
 
 // Create product
 router.post('/',auth, async (req, res) => {
-
   try {
     const { images, variants, ...fields } = req.body;
 

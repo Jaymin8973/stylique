@@ -1,240 +1,293 @@
-import axios from 'axios';
-import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { useFormik } from 'formik';
-import React from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState, useCallback } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View, TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
-import * as Yup from 'yup';
-import IpAddress from '../../Config.json';
-
+import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
+import { THEME } from '../../constants/Theme';
+import API from '../../Api';
 
 const AddressForm = () => {
-    const [open, setOpen] = React.useState(false);
-    const API = axios.create({
-        baseURL: `http://${IpAddress.IpAddress}:3000`,
-    });
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const addressId = params.addressId ? Number(params.addressId) : null;
+  const isEditing = !!addressId;
 
-    const AddressSchema = Yup.object().shape({
-        firstName: Yup.string().required('First Name is required'),
-        lastName: Yup.string().required('Last Name is required'),
-        mobileNumber: Yup.string()
-            .matches(/^[0-9]{10}$/, 'Must be 10 digits')
-            .required('Mobile Number is required'),
-        pincode: Yup.string()
-            .matches(/^[0-9]{6}$/, 'Must be 6 digits')
-            .required('Pincode is required'),
-        houseNo: Yup.string().required('House No is required'),
-        street: Yup.string().required('Street is required'),
-        city: Yup.string().required('City is required'),
-        state: Yup.string().required('State is required'),
-        addressType: Yup.string().required('Address type is required'),
-    });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    mobileNumber: '',
+    pincode: '',
+    houseNo: '',
+    street: '',
+    city: '',
+    state: '',
+    isDefault: false,
+  });
 
+  const loadAddress = useCallback(async () => {
+    if (!isEditing) return;
+    try {
+      setLoading(true);
+      const res = await API.get(`/api/address/${addressId}`);
+      const a = res.data;
+      setForm({
+        firstName: a.firstName || '',
+        lastName: a.lastName || '',
+        mobileNumber: a.mobileNumber || '',
+        pincode: a.pincode || '',
+        houseNo: a.houseNo || '',
+        street: a.street || '',
+        city: a.city || '',
+        state: a.state || '',
+        isDefault: !!a.isDefault,
+      });
+    } catch (error) {
+      if (error.response) {
+        Toast.show({
+          type: 'error',
+          text1:
+            error.response.data.message ||
+            error.response.data.error ||
+            'Failed to load address',
+        });
+      } else {
+        Toast.show({ type: 'error', text1: 'Network error, please try again' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [addressId, isEditing]);
 
+  useEffect(() => {
+    loadAddress();
+  }, [loadAddress]);
 
-    const formik = useFormik({
-        initialValues: {
-            firstName: '',
-            lastName: '',
-            mobileNumber: '',
-            pincode: '',
-            houseNo: '',
-            street: '',
-            city: '',
-            state: '',
-            addressType: '',
-        },
-        validationSchema: AddressSchema,
-        onSubmit: async (values) => {
-            try {
-                const email = await SecureStore.getItemAsync('userEmail');
-                await API.post('/address/add', {
-                    email,
-                    ...values,
-                })
+  const updateField = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
-                Toast.show({
-                    type: 'success',
-                    text1: 'Address Added',
-                    text2: 'Your address has been successfully added!'
-                });
-                formik.resetForm();
-                router.replace('/Address');
-            }
-            catch (error) {
-                if (error.response) {
-                    alert(error.response.data.message || "Server error");
-                } else if (error.request) {
-                    alert("Network error, please try again");
-                } else {
-                    console.log(error.message);
-                    alert(error.message);
-                }
-            }
-        }
+  const validate = () => {
+    if (!form.firstName.trim()) {
+      Toast.show({ type: 'error', text1: 'First name is required' });
+      return false;
+    }
+    if (!form.mobileNumber.trim() || form.mobileNumber.trim().length < 10) {
+      Toast.show({ type: 'error', text1: 'Valid mobile number is required' });
+      return false;
+    }
+    if (!form.pincode.trim()) {
+      Toast.show({ type: 'error', text1: 'Pincode is required' });
+      return false;
+    }
+    if (!form.houseNo.trim()) {
+      Toast.show({ type: 'error', text1: 'House / Flat no. is required' });
+      return false;
+    }
+    if (!form.street.trim()) {
+      Toast.show({ type: 'error', text1: 'Street is required' });
+      return false;
+    }
+    if (!form.city.trim()) {
+      Toast.show({ type: 'error', text1: 'City is required' });
+      return false;
+    }
+    if (!form.state.trim()) {
+      Toast.show({ type: 'error', text1: 'State is required' });
+      return false;
+    }
+    return true;
+  };
 
-    });
+  const handleSubmit = async () => {
+    if (!validate()) return;
 
+    const payload = {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim() || null,
+      mobileNumber: form.mobileNumber.trim(),
+      pincode: form.pincode.trim(),
+      houseNo: form.houseNo.trim(),
+      street: form.street.trim(),
+      city: form.city.trim(),
+      state: form.state.trim(),
+    };
 
+    if (form.isDefault) {
+      payload.isDefault = true;
+    }
+
+    try {
+      setSaving(true);
+      if (isEditing) {
+        await API.patch(`/api/address/${addressId}`, payload);
+        Toast.show({ type: 'success', text1: 'Address updated' });
+      } else {
+        await API.post('/api/address', payload);
+        Toast.show({ type: 'success', text1: 'Address added' });
+      }
+      router.push('Address');
+    } catch (error) {
+      if (error.response) {
+        Toast.show({
+          type: 'error',
+          text1:
+            error.response.data.message ||
+            error.response.data.error ||
+            'Failed to save address',
+        });
+      } else {
+        Toast.show({ type: 'error', text1: 'Network error, please try again' });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ flex: 1 }}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
-            <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1 }}>
-                <View>
-                    <Text className="text-gray-500 text-lg mb-1">First Name*</Text>
-                    <TextInput
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="First Name"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('firstName')}
-                        onBlur={formik.handleBlur('firstName')}
-                        value={formik.values.firstName}
-                    />
-                    {formik.errors.firstName && formik.touched.firstName && (
-                        <Text className="text-red-500 mb-2">{formik.errors.firstName}</Text>
-                    )}
-
-                    <Text className="text-gray-500 text-lg mb-1">Last Name</Text>
-                    <TextInput
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="Last Name"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('lastName')}
-                        onBlur={formik.handleBlur('lastName')}
-                        value={formik.values.lastName}
-                    />
-                    {formik.errors.lastName && formik.touched.lastName && (
-                        <Text className="text-red-500 mb-2">{formik.errors.lastName}</Text>
-                    )}
-
-                    <Text className="text-gray-500 text-lg mb-1">Mobile Number</Text>
-                    <TextInput
-                        keyboardType="phone-pad"
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="Mobile Number"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('mobileNumber')}
-                        onBlur={formik.handleBlur('mobileNumber')}
-                        value={formik.values.mobileNumber}
-                        maxLength={10}
-                    />
-                    {formik.errors.mobileNumber && formik.touched.mobileNumber && (
-                        <Text className="text-red-500 mb-2">{formik.errors.mobileNumber}</Text>
-                    )}
-
-                    <Text className="text-gray-500 text-lg mb-1">Pincode</Text>
-                    <TextInput
-                        keyboardType="number-pad"
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="Pincode"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('pincode')}
-                        onBlur={formik.handleBlur('pincode')}
-                        value={formik.values.pincode}
-                        maxLength={6}
-                    />
-                    {formik.errors.pincode && formik.touched.pincode && (
-                        <Text className="text-red-500 mb-2">{formik.errors.pincode}</Text>
-                    )}
-
-                    <Text className="text-gray-500 text-lg mb-1">Flat, House no., Building, Company, Apartment</Text>
-                    <TextInput
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="House no., Building, Apartment"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('houseNo')}
-                        onBlur={formik.handleBlur('houseNo')}
-                        value={formik.values.houseNo}
-                    />
-                    {formik.errors.houseNo && formik.touched.houseNo && (
-                        <Text className="text-red-500 mb-2">{formik.errors.houseNo}</Text>
-                    )}
-
-                    <Text className="text-gray-500 text-lg mb-1">Area, Street, Sector, Village</Text>
-                    <TextInput
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="Area, Street, Sector, Village"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('street')}
-                        onBlur={formik.handleBlur('street')}
-                        value={formik.values.street}
-                    />
-                    {formik.errors.street && formik.touched.street && (
-                        <Text className="text-red-500 mb-2">{formik.errors.street}</Text>
-                    )}
-
-                    <Text className="text-gray-500 text-lg mb-1">Town/City</Text>
-                    <TextInput
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="Town/City"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('city')}
-                        onBlur={formik.handleBlur('city')}
-                        value={formik.values.city}
-                    />
-                    {formik.errors.city && formik.touched.city && (
-                        <Text className="text-red-500 mb-2">{formik.errors.city}</Text>
-                    )}
-
-                    <Text className="text-gray-500 text-lg mb-1">State</Text>
-                    <TextInput
-                        className="border-b border-gray-300 text-lg rounded-md py-3 mb-2"
-                        placeholder="State"
-                        placeholderTextColor={'gray'}
-                        onChangeText={formik.handleChange('state')}
-                        onBlur={formik.handleBlur('state')}
-                        value={formik.values.state}
-                    />
-                    {formik.errors.state && formik.touched.state && (
-                        <Text className="text-red-500 mb-2">{formik.errors.state}</Text>
-                    )}
-                    <View className="mb-6 z-50">
-                        <Text className="text-gray-500 text-lg mb-1">Address Type</Text>
-                        <DropDownPicker
-                            open={open}
-                            value={formik.values.addressType}
-                            items={[
-                                { label: 'Home', value: 'home' },
-                                { label: 'Work', value: 'work' },
-                                { label: 'Other', value: 'other' },
-                            ]}
-                            setOpen={setOpen}
-                            setValue={(callback) => formik.setFieldValue('addressType', callback())}
-                            placeholder="Select address type"
-                            placeholderTextColor={'lightgray'}
-                            containerStyle={{
-                            }}
-                            style={{
-                                borderColor: '#d1d5db',
-                                borderWidth: 1,
-                                borderRadius: 5,
-                                paddingHorizontal: 10,
-                                height: 44,
-                            }}
-                            dropDownContainerStyle={{
-                                borderColor: '#d1d5db',
-                            }}
-                        />
-                        {formik.errors.addressType && formik.touched.addressType && (
-                            <Text className="text-red-500">{formik.errors.addressType}</Text>
-                        )}
-                    </View>
-
-                    <Pressable
-                        className="bg-[#343434] py-4 rounded-md"
-                        onPress={formik.handleSubmit}
-                    >
-                        <Text className="text-white font-bold text-center text-lg">Save Address</Text>
-                    </Pressable>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+      <ThemedContainer>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <Text className="mt-4 text-gray-600">
+            {isEditing ? 'Loading address...' : 'Preparing form...'}
+          </Text>
+        </View>
+      </ThemedContainer>
     );
+  }
+
+  return (
+    <ThemedContainer>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      >
+        <ScrollView className="flex-1">
+          <ThemedSection className="pt-4 pb-8">
+            <View className="gap-6">
+              <View className="flex-row gap-4">
+                <View className="flex-1">
+                  <Text className="text-gray-600 mb-1">First Name</Text>
+                  <TextInput
+                    className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                    value={form.firstName}
+                    onChangeText={(t) => updateField('firstName', t)}
+                    placeholder="John"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-600 mb-1">Last Name</Text>
+                  <TextInput
+                    className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                    value={form.lastName}
+                    onChangeText={(t) => updateField('lastName', t)}
+                    placeholder="Doe"
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-gray-600 mb-1">Mobile Number</Text>
+                <TextInput
+                  className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                  value={form.mobileNumber}
+                  onChangeText={(t) => updateField('mobileNumber', t)}
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                  placeholder="10-digit mobile number"
+                />
+              </View>
+
+              <View className="flex-row gap-4">
+                <View className="flex-1">
+                  <Text className="text-gray-600 mb-1">Pincode</Text>
+                  <TextInput
+                    className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                    value={form.pincode}
+                    onChangeText={(t) => updateField('pincode', t)}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    placeholder="Pincode"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-600 mb-1">House / Flat No.</Text>
+                  <TextInput
+                    className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                    value={form.houseNo}
+                    onChangeText={(t) => updateField('houseNo', t)}
+                    placeholder="House no., building"
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-gray-600 mb-1">Street / Area</Text>
+                <TextInput
+                  className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                  value={form.street}
+                  onChangeText={(t) => updateField('street', t)}
+                  placeholder="Street, area, landmark"
+                />
+              </View>
+
+              <View className="flex-row gap-4">
+                <View className="flex-1">
+                  <Text className="text-gray-600 mb-1">City</Text>
+                  <TextInput
+                    className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                    value={form.city}
+                    onChangeText={(t) => updateField('city', t)}
+                    placeholder="City"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-600 mb-1">State</Text>
+                  <TextInput
+                    className="bg-white rounded-xl border border-gray-200 px-3 py-2 text-base"
+                    value={form.state}
+                    onChangeText={(t) => updateField('state', t)}
+                    placeholder="State"
+                  />
+                </View>
+              </View>
+
+              <View className="flex-row items-center justify-between bg-white rounded-2xl border border-gray-200 px-4 py-3">
+                <View className="flex-1 mr-3">
+                  <Text className="text-gray-900 font-semibold">Set as default</Text>
+                  <Text className="text-gray-500 text-xs mt-1">
+                    This address will be used by default for deliveries.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => updateField('isDefault', !form.isDefault)}
+                  className={`w-12 h-7 rounded-full flex-row items-center px-1 ${
+                    form.isDefault ? 'bg-black' : 'bg-gray-300'
+                  }`}
+                >
+                  <View
+                    className={`w-5 h-5 rounded-full bg-white ${
+                      form.isDefault ? 'ml-5' : 'ml-0'
+                    }`}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <ThemedButton
+                title={saving ? 'Saving...' : isEditing ? 'Update Address' : 'Save Address'}
+                onPress={handleSubmit}
+                disabled={saving}
+                className="mt-4 "
+              />
+            </View>
+          </ThemedSection>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ThemedContainer>
+  );
 };
 
 export default AddressForm;
