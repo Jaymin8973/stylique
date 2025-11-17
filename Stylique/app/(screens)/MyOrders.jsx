@@ -114,16 +114,7 @@ export default function MyOrders() {
     <ThemedContainer>
       <View className="flex-1">
         <ThemedSection className="pt-4 pb-2">
-          <View className="flex-row items-center mb-4">
-            <Ionicons 
-              name="arrow-back" 
-              size={24} 
-              color="#111" 
-              onPress={() => router.back()}
-            />
-            <Text className="flex-1 text-center text-xl font-bold text-gray-900">My Orders</Text>
-            <View style={{ width: 24 }} />
-          </View>
+         
 
           <ScrollView 
             horizontal 

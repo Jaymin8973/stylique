@@ -97,6 +97,37 @@ router.post('/', async (req, res) => {
   }
 });
 
+// List orders for current user
+router.get('/', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { status } = req.query || {};
+
+    const where = { userId };
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    const orders = await prisma.orders.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: {
+          include: { product: true },
+        },
+        _count: {
+          select: { items: true },
+        },
+      },
+    });
+
+    return res.json(orders);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
 // Get an order with items for current user
 router.get('/:id', async (req, res) => {
   try {

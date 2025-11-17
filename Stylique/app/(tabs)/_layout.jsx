@@ -10,6 +10,7 @@ import { Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'rea
 import AboutUs from '../(slidebar)/AboutUs';
 import Setting from '../(slidebar)/Setting';
 import Support from '../(slidebar)/Support';
+import MyOrders from '../(screens)/MyOrders';
 import IpAddress from '../../Config.json';
 
 const _layout = () => {
@@ -187,6 +188,30 @@ const API = axios.create({
             <Octicons name="home" size={24} color={focused ? "black" : "gray"} />
           ),
         }} 
+      />
+
+      <Drawer.Screen name="MyOrders" component={MyOrders}
+        options={({ navigation }) => ({
+            headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">My Orders</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'transparent' }} />
+        ),
+          drawerLabel: ({ focused, color }) => (
+            <Text style={{ fontSize: 20, color: color, fontWeight: 'bold' }}>
+              My Orders
+            </Text>
+          ),
+          drawerIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons name="clipboard-list-outline" size={24} color={focused ? "black" : "gray"} />
+          ),
+        })} 
       />
 
       <Drawer.Screen name="Setting" component={Setting}
