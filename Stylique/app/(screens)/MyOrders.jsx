@@ -63,7 +63,7 @@ const OrderItem = ({ order, onPress }) => {
 };
 const EmptyState = () => (
   <View className="flex-1 items-center justify-center py-12">
-    <Ionicons name="cube-outline" size={48} color={THEME.colors.gray[300]} />
+    <Ionicons name="cube-outline" size={48} color={THEME.colors.text.tertiary} />
     <Text className="text-gray-500 text-lg font-medium mt-4">No orders yet</Text>
     <Text className="text-gray-400 text-center mt-2 px-8">
       Your order history will appear here when you make a purchase

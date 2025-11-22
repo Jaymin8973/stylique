@@ -2,6 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+
 import * as SecureStore from 'expo-secure-store';
 import { useFormik } from 'formik';
 import { useEffect, useState } from 'react';
@@ -15,41 +18,74 @@ import IpAddress from '../../Config.json';
 
 const Login = () => {
   const router = useRouter();
-  const [Loading , setLoading] = useState(false);
+  const [Loading, setLoading] = useState(false);
+
   const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:5001`,
-});
+    baseURL: `http://${IpAddress.IpAddress}:5001`,
+  });
 
- useEffect(() => {
-   const checkToken = async () => {
-    setLoading(true);
-    const token = await AsyncStorage.getItem('userToken');
-    if (token) {
-      router.replace('(tabs)');
-    }
-    setLoading(false);
-  };
-  checkToken();
- }, []);
-
-
+  useEffect(() => {
+    const checkToken = async () => {
+      setLoading(true);
+      const token = await AsyncStorage.getItem('userToken');
+      if (token) {
+        router.replace('(tabs)');
+      }
+      setLoading(false);
+    };
+    checkToken();
+  }, []);
 
   const ValidationSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Email is required'),
     password: Yup.string().min(6, 'Password too short').required('Password is required'),
   });
   const formik = useFormik({
+
     initialValues: { email: '', password: '' },
     validationSchema: ValidationSchema,
     onSubmit: async (values) => {
       try {
         setLoading(true);
         const response = await API.post(`/api/auth/login`, values);
-        console.log(response.data);
         const token = response.data.token;
         const userId = String(response.data.user.id);
         await AsyncStorage.setItem('userToken', token);
         await SecureStore.setItemAsync('userId', userId);
+        try {
+          const { status: existingStatus } = await Notifications.getPermissionsAsync();
+          let finalStatus = existingStatus;
+          console.log('Notification permission existingStatus:', existingStatus);
+          if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+            console.log('Notification permission after request:', status);
+          }
+          if (finalStatus !== 'granted') {
+            console.log('Notification permission not granted, skipping push token registration');
+          } else {
+            const projectId = Constants?.expoConfig?.extra?.eas?.projectId
+              ?? Constants?.expoConfig?.projectId
+              ?? Constants?.expoConfig?.slug;
+            console.log('Using projectId for push token:', projectId);
+            const pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
+            console.log('Expo push token:', pushToken?.data);
+            if (pushToken?.data) {
+              try {
+                const res = await API.post('/api/notifications/register', { token: pushToken.data }, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                console.log('Register push token response:', res.data);
+              } catch (regErr) {
+                console.log('Failed to register push token:', regErr?.response?.data || regErr?.message);
+              }
+            } else {
+              console.log('No pushToken.data returned from getExpoPushTokenAsync');
+            }
+          }
+        } catch (e) {
+          console.log('Error during notification setup:', e?.message);
+        }
         Toast.show({
           type: 'success',
           text1: 'Login Successful',
@@ -58,9 +94,11 @@ const Login = () => {
         setLoading(false);
         router.replace('(tabs)');
       } catch (error) {
-        console.log(error.message)
+        setLoading(false);
+        console.log(error.message);
         if (error.response) {
-          alert(error.response.data.message || "Server error");
+          const data = error.response.data || {};
+          alert(data.error || data.message || "Server error");
         } else if (error.request) {
           alert("Network error, please try again");
         } else {

@@ -1,28 +1,20 @@
 import { AntDesign, Feather, FontAwesome, MaterialCommunityIcons, MaterialIcons, Octicons, SimpleLineIcons } from '@expo/vector-icons';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
-import { Image } from 'expo-image';
-import { Stack, Tabs, useFocusEffect, useRouter } from 'expo-router';
+import { Tabs, useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNotifications } from '../NotificationProvider';
 import AboutUs from '../(slidebar)/AboutUs';
 import Setting from '../(slidebar)/Setting';
 import Support from '../(slidebar)/Support';
 import MyOrders from '../(screens)/MyOrders';
-import IpAddress from '../../Config.json';
+import API from '../../Api';
 
 const _layout = () => {
   const [image , setImage] = useState(null);
   const [name , setName] = useState(null);
   const [email , setEmail] = useState(null);
-  const Navigation = useNavigation();
-const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:5001`,
-});
-
-
   const FetchData = async () => {
     try {
    
@@ -53,10 +45,20 @@ const API = axios.create({
     return (
       <DrawerContentScrollView {...props}>
         <View style={styles.topContent} className=" flex-row ">
-          <Image
-            source={image ? { uri: image } : require("../../assets/images/User.jpg")}
-            style={styles.logo}
-          />
+          <View style={styles.logo}>
+            <Text style={styles.logoLetter}>
+              {(() => {
+                const raw = (name && name.trim()) || (email && email.split('@')[0]) || 'U';
+                const words = raw.split(/\s+/).filter(Boolean);
+                if (words.length >= 2) {
+                  return (words[0][0] + words[1][0]).toUpperCase();
+                }
+                const compact = raw.replace(/[^A-Za-z0-9]/g, '');
+                const base = compact || 'U';
+                return base.slice(0, 2).toUpperCase();
+              })()}
+            </Text>
+          </View>
           <View className="ms-5">
             <Text style={styles.username}>{name ? name : "User"}</Text>
             <Text className="text-xl">{email ? email : "user@example.com"}</Text>
@@ -68,8 +70,9 @@ const API = axios.create({
   }
 
   function TabNavigator() {
-    
     const router = useRouter();
+    const { notifications } = useNotifications();
+    const hasUnread = notifications.some((n) => !n.read);
     return (
       <Tabs screenOptions={{
         tabBarActiveBackgroundColor: 'transparent',
@@ -84,7 +87,7 @@ const API = axios.create({
           name="index"
           options={({ navigation }) => ({
             headerLeft: () => (
-              <Pressable onPress={() => navigation.openDrawer()} className="ml-8">
+              <Pressable onPress={() => navigation.getParent()?.openDrawer()} className="ml-8">
                <MaterialIcons name="notes" size={30} color="black" className="" style={{ transform: [{ scaleY: -1 }] }} />
               </Pressable>
             ),
@@ -97,15 +100,30 @@ const API = axios.create({
               <Octicons name="home" size={24} color={focused ? "black" : "gray"} />
             ),
                headerBackground: () => (
-            <View style={{ backgroundColor: 'transparent' }} />
+            <View style={{flex:1, backgroundColor: 'white' }} />
           ),
             headerTitle: () => (
               <Text className="text-2xl font-bold">Stylique</Text>
             ),
             headerTitleAlign: 'center',
             headerRight: () => (
-              <Pressable onPress={()=>router.push("Notification")} className="mr-8" >
-                <FontAwesome name='bell-o' size={25} color={'black'} />
+              <Pressable onPress={() => router.push("/(screens)/Notification")} className="mr-8" >
+                <View>
+                  <FontAwesome name='bell-o' size={25} color={'black'} />
+                  {hasUnread && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: -2,
+                        right: -2,
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: 'red',
+                      }}
+                    />
+                  )}
+                </View>
               </Pressable>
             ),
              title: "",
@@ -127,24 +145,24 @@ const API = axios.create({
         <Tabs.Screen
           name="Cart"
           options={({ navigation }) => ({
-        headerLeft: () => (
-          <Pressable className=" rounded-full p-2 bg-white ms-5" onPress={() => navigation.goBack()}>
-            <AntDesign name="left" size={20} color="black" />
-          </Pressable>
-        ),
-        headerTitle: () => (
-          <Text className="text-2xl font-bold">Your Cart</Text>
-        ),
-        headerBackground: () => (
-          <View style={{ 
-            backgroundColor: 'transparent', 
-            flex: 1,
-          }} />
-        ),
-         tabBarIcon: ({ color, size }) => (
+            headerLeft: () => (
+              <Pressable className="rounded-full p-2 bg-white ms-5" onPress={() => navigation.getParent()?.openDrawer()}>
+                <MaterialIcons name="notes" size={20} color="black" />
+              </Pressable>
+            ),
+            headerTitle: () => (
+              <Text className="text-2xl font-bold">Your Cart</Text>
+            ),
+            headerBackground: () => (
+              <View style={{ 
+                backgroundColor: 'white', 
+                flex: 1,
+              }} />
+            ),
+            tabBarIcon: ({ color, size }) => (
               <SimpleLineIcons name="handbag" size={24} color={color} />
             ),
-      })} 
+          })} 
         />
         <Tabs.Screen
           name="Profile"
@@ -171,7 +189,7 @@ const API = axios.create({
           borderBottomRightRadius: 20,
           overflow: 'hidden',
         },
-        drawerActiveBackgroundColor: 'trasperent',
+        drawerActiveBackgroundColor: 'transparent',
         drawerActiveTintColor: 'black',
         drawerInactiveTintColor: 'gray',
       }}
@@ -280,10 +298,18 @@ const styles = StyleSheet.create({
     height: 80,
     marginBottom: 10,
     borderRadius: 40,
+    backgroundColor: '#343434',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   username: {
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  logoLetter: {
+    fontSize: 32,
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

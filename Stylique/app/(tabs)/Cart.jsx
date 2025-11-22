@@ -98,7 +98,7 @@ const Cart = () => {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 , backgroundColor:'white' }}>
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.id)}
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   qtyBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f2f2f2', borderRadius: 8 },
   qtyBtn: { padding: 8 },
   qtyText: { paddingHorizontal: 12, fontSize: 14, fontWeight: '600' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' , backgroundColor:'white' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#eee', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   subLabel: { color: '#666', fontSize: 12 },
   subValue: { color: '#111', fontSize: 20, fontWeight: '800' },

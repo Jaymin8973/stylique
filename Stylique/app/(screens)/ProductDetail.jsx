@@ -407,7 +407,7 @@ export default function ProductDetail() {
             <Text className="text-white text-xl font-bold">₹{(parseFloat(product?.sellingPrice || 0) * quantity).toFixed(2)}</Text>
           </View>
           {inCart ? (
-            <TouchableOpacity onPress={() => router.navigate('/Cart')} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
+            <TouchableOpacity onPress={() => router.push('/(tabs)/Cart')} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
               <Ionicons name="cart-outline" size={20} color={THEME.colors.primary} />
               <Text className="ml-2 font-bold text-base" style={{ color: THEME.colors.primary }}>
                 View Cart

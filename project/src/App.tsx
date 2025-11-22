@@ -7,7 +7,10 @@ import Products from './components/pages/Products';
 import Orders from './components/pages/Orders';
 
 import Analytics from './components/pages/Analytics';
-
+import Users from './components/pages/Users';
+import Notifications from './components/pages/Notifications';
+import Collections from './components/pages/Collections';
+import Sales from './components/pages/Sales';
 
 import Settings from './components/pages/Settings';
 import ProductUpload from './components/pages/ProductUpload';
@@ -50,6 +53,10 @@ function App() {
                 <Route path="/products/:id" element={<RequireAuth><ProductDetail /></RequireAuth>} />
                 <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
                 <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
+                <Route path="/users" element={<RequireAuth><Users /></RequireAuth>} />
+                <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+                <Route path="/collections" element={<RequireAuth><Collections /></RequireAuth>} />
+                <Route path="/sales" element={<RequireAuth><Sales /></RequireAuth>} />
                 <Route path="/promotions" element={<RequireAuth><Marketing /></RequireAuth>} />
                 <Route path="/returns" element={<RequireAuth><Returns /></RequireAuth>} />
                 <Route path="/payments" element={<RequireAuth><Payments /></RequireAuth>} />

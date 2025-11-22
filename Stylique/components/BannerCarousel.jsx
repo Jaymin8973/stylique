@@ -12,7 +12,7 @@ const DEFAULT_BANNERS = [
     title: 'New Collection',
     subtitle: 'Discount 50% for the first transaction',
     cta: 'Shop Now',
-    image: 'https://images.unsplash.com/photo-1520975922203-bfe1258d66dc?w=600',
+    image: 'https://images.unsplash.com/photo-1569484221992-2a453658fff3?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZmFzdCUyMGZhc2hpb258ZW58MHx8MHx8fDA%3D',
     bg: '#EDE1D5'
   },
   {
@@ -20,7 +20,7 @@ const DEFAULT_BANNERS = [
     title: 'Summer Sale',
     subtitle: 'Up to 40% off selected items',
     cta: 'Explore',
-    image: 'https://images.unsplash.com/photo-1514996937319-344454492b37?w=600',
+    image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZmFzdCUyMGZhc2hpb258ZW58MHx8MHx8fDA%3D',
     bg: '#EFEAE4'
   },
   {
@@ -28,7 +28,7 @@ const DEFAULT_BANNERS = [
     title: 'Trending Now',
     subtitle: 'Fresh fits you will love',
     cta: 'Discover',
-    image: 'https://images.unsplash.com/photo-1520975682031-569d9b3c5a73?w=600',
+    image: 'https://media.istockphoto.com/id/2238880682/photo/the-clothing-stores-display-window.jpg?s=612x612&w=0&k=20&c=ORzBdXJQZsWDRya5ddNXMMyVAJKQf0G1TvTGeCzuWvw=',
     bg: '#F0E9E1'
   }
 ];
@@ -43,20 +43,26 @@ export default function BannerCarousel({
   const [index, setIndex] = useState(0);
   const autoplayRef = useRef(null);
 
-  const scrollToSlide = (nextIndex) => {
+  const scrollToSlide = (nextIndex, animated = true) => {
     if (!listRef.current) return;
     listRef.current.scrollToOffset({
       offset: nextIndex * width,
-      animated: true,
+      animated,
     });
   };
 
-  // Autoplay Logic: just advance index on a timer
+  // Autoplay Logic: advance index on a timer and loop without backward animation
   useEffect(() => {
     if (!autoPlay || banners.length <= 1) return;
 
     autoplayRef.current = setInterval(() => {
-      setIndex((prev) => (prev + 1) % banners.length);
+      setIndex((prev) => {
+        const next = (prev + 1) % banners.length;
+        const isWrap = next === 0;
+        // When wrapping from last to first, jump without animation so it doesn't slide backwards
+        scrollToSlide(next, !isWrap);
+        return next;
+      });
     }, interval);
 
     return () => {
@@ -66,11 +72,6 @@ export default function BannerCarousel({
     };
   }, [autoPlay, interval, banners.length]);
 
-  // Whenever index changes, scroll the FlatList to that slide
-  useEffect(() => {
-    scrollToSlide(index);
-  }, [index]);
-
   return (
     <View style={styles.container}>
       <FlatList
@@ -79,22 +80,17 @@ export default function BannerCarousel({
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={{ width }}>
-            <View style={[styles.card, { backgroundColor: item.bg }]}>
-              <View style={styles.left}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.subtitle}>{item.subtitle}</Text>
-                <Pressable onPress={() => onPressCta?.(item)} style={styles.cta}>
-                  <Text style={styles.ctaText}>{item.cta}</Text>
-                </Pressable>
-              </View>
-
+            <Pressable
+              onPress={() => onPressCta?.(item)}
+              style={styles.card}
+            >
               <Image
                 source={{ uri: item.image }}
                 style={styles.image}
                 contentFit="cover"
                 pointerEvents="none"
               />
-            </View>
+            </Pressable>
           </View>
         )}
         horizontal
@@ -126,40 +122,11 @@ const styles = StyleSheet.create({
   card: {
     height: CARD_HEIGHT,
     borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
     overflow: 'hidden',
-  },
-  left: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  cta: {
-    backgroundColor: '#6B4B3F',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  ctaText: {
-    color: 'white',
-    fontWeight: '600',
+    marginHorizontal: 20,
   },
   image: {
-    width: 140,
+    width: '100%',
     height: CARD_HEIGHT,
     borderRadius: 16,
   },

@@ -128,6 +128,54 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Admin: list all orders with customer and basic product info
+router.get('/admin', async (req, res) => {
+  try {
+    // Only allow seller/admin roles (RoleID 2 assumed to be seller)
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const orders = await prisma.orders.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    const mapped = orders.map((o) => {
+      const firstItem = o.items[0];
+      const totalAmount = Number.parseFloat(o.total || '0') || 0;
+      const qty = o.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+
+      return {
+        id: o.id,
+        customer_name: o.user?.Username || `User #${o.userId}`,
+        customer_email: o.user?.Email || '',
+        product_id: firstItem?.productId || 0,
+        product_name:
+          firstItem?.productName || firstItem?.product?.productName || undefined,
+        quantity: qty,
+        total_amount: totalAmount,
+        status: o.status || 'processing',
+        shipping_address: o.addressText || '',
+        created_at: o.createdAt ? o.createdAt.toISOString() : new Date().toISOString(),
+        updated_at: o.updatedAt ? o.updatedAt.toISOString() : new Date().toISOString(),
+      };
+    });
+
+    return res.json(mapped);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to fetch admin orders' });
+  }
+});
+
 // Get an order with items for current user
 router.get('/:id', async (req, res) => {
   try {

@@ -11,6 +11,9 @@ import addressRouter from './routes/address.js';
 import paymentRouter from './routes/payment.js';
 import ordersRouter from './routes/orders.js';
 import ratingRouter from './routes/rating.js';
+import notificationsRouter from './routes/notifications.js';
+import collectionsRouter from './routes/collections.js';
+import salesRouter from './routes/sales.js';
 
 dotenv.config();
 
@@ -41,6 +44,9 @@ app.use('/api/address', addressRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/rating', ratingRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/collections', collectionsRouter);
+app.use('/api/sales', salesRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

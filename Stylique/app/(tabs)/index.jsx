@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import API from '../../Api';
 import data from '../../data.json';
@@ -16,6 +17,9 @@ const Home = () => {
   const icons = ["symbol-female", "symbol-male", "eyeglass", "game-controller" ]
   const [Categories, setCategories] = useState("men");
   const [featuredProducts, setFeaturedProducts] = useState(data.feature_products || []);
+  const [collections, setCollections] = useState([]);
+  const [sales, setSales] = useState([]);
+
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -25,9 +29,12 @@ const Home = () => {
 
   useEffect(() => {
     fetchFeaturedProducts();
+    fetchCollections();
+    fetchSales();
   }, [])
 
   const fetchFeaturedProducts = async () => {
+
     try {
       const response = await API.get('api/products/all');
       const allProducts = response.data || [];
@@ -42,6 +49,26 @@ const Home = () => {
       console.error('Error fetching featured products:', error);
     }
   };
+
+  const fetchCollections = async () => {
+
+    try {
+      const response = await API.get('/api/collections/public');
+      setCollections(response.data || []);
+    } catch (error) {
+      console.error('Error fetching collections:', error);
+    }
+  };
+
+  const fetchSales = async () => {
+    try {
+      const response = await API.get('/api/sales/public');
+      setSales(response.data || []);
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+    }
+  };
+
 
   useEffect(() => {
     if (!featuredProducts || featuredProducts.length === 0) return;
@@ -63,6 +90,9 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [featuredProducts]);
 
+  const collectionBanners = (collections || [])
+    .filter((c) => c.imageUrl)
+    .map((c) => ({ id: String(c.id), image: c.imageUrl }));
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -74,7 +104,7 @@ const Home = () => {
               <Pressable key={index} onPress={() => setCategories(category)}>
                 <View className="flex justify-center  items-center">
                   <View className={Categories === category ? `flex justify-center  items-center rounded-full h-20 w-20 border border-[#3A2C27]` : 'flex justify-center  items-center rounded-full h-20 w-20'}>
-                    <View className={Categories === category ? "bg-[#3A2C27] rounded-full justify-center items-center" : ' rounded-full justify-center items-center bg-gray-200'} style={{ height: 60, width: 60 }}>
+                    <View className={Categories === category ? "bg-[#3A2C27] rounded-full justify-center items-center" : ' rounded-full justify-center items-center bg-[#F3F3F3]'} style={{ height: 60, width: 60 }}>
                       <SimpleLineIcons
                         name={icons[index] ? icons[index].trim() : "question"}
                         size={24}
@@ -89,7 +119,19 @@ const Home = () => {
             ))}
           </View>
             </ScrollView>
-          <BannerCarousel onPressCta={() => router.push('/AlllProducts')} />
+          {collectionBanners.length > 0 ? (
+            <BannerCarousel
+              banners={collectionBanners}
+              onPressCta={(item) =>
+                router.push({
+                  pathname: '/(screens)/CollectionDetail',
+                  params: { id: item.id },
+                })
+              }
+            />
+          ) : (
+            <BannerCarousel onPressCta={() => router.push('/AlllProducts')} />
+          )}
 
           <View className="flex-row  items-center px-5 mt-3 justify-between">
             <Text className="text-3xl font-bold">Feature Products</Text>
@@ -146,6 +188,53 @@ const Home = () => {
             />
           </View>
 
+          {sales.length > 0 && (
+            (() => {
+              const sale = sales[0];
+              return (
+                <>
+                  <View className="flex-row items-center px-5 mt-6 justify-between">
+                    <Text className="text-3xl font-bold">Sale</Text>
+                    <Pressable
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(screens)/SaleDetail',
+                          params: { id: String(sale.id) },
+                        })
+                      }
+                    >
+                      <Text className="text-xl text-gray-500">View</Text>
+                    </Pressable>
+                  </View>
+
+                  <View className="mt-4 px-5">
+                    <Pressable
+                      className="mb-4"
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(screens)/SaleDetail',
+                          params: { id: String(sale.id) },
+                        })
+                      }
+                    >
+                      <View className="bg-white rounded-3xl overflow-hidden" style={{ elevation: 2 }}>
+                        <View style={{ borderRadius: 24, overflow: 'hidden', height: 160 }}>
+                          <Image
+                            source={{
+                              uri:
+                                sale.bannerUrl ||
+                                'https://images.unsplash.com/photo-1520975682031-569d9b3c5a73?w=600',
+                            }}
+                            style={{ width: '100%', height: '100%' }}
+                          />
+                        </View>
+                      </View>
+                    </Pressable>
+                  </View>
+                </>
+              );
+            })()
+          )}
         </View>
       </SafeAreaView>
     </ScrollView>
@@ -162,9 +251,9 @@ const styles = StyleSheet.create({
     maxWidth: 150,
   },
   container: {
-
     flexGrow: 1,
     justifyContent: 'flex-end',
+    backgroundColor:'white'
   },
   productImage: {
     width: 150,

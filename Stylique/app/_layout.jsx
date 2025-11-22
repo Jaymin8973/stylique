@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import Toast from 'react-native-toast-message';
+import { NotificationProvider } from "./NotificationProvider";
 import "../global.css";
 
 export default function RootLayout() {
@@ -35,16 +36,14 @@ export default function RootLayout() {
     );
   }
   return (
-    <>
-    <Stack>
-    
+    <NotificationProvider>
+      <Stack>
         <Stack.Screen name="(Onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(Authentication)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(screens)" options={{ headerShown: false }} />
-    
-    </Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(screens)" options={{ headerShown: false }} />
+      </Stack>
       <Toast position="top" autoHide={true} visibilityTime={2500} topOffset={50} />
-    </>
+    </NotificationProvider>
   );
 }

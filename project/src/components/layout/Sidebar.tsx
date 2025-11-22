@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, Upload as UploadIcon, ShoppingCart, BarChart3,
   Megaphone, Settings, RotateCcw, CreditCard, Truck,
-  Star, HeadphonesIcon, Store as StoreIcon, ChevronLeft, ChevronRight
+  Star, HeadphonesIcon, Store as StoreIcon, ChevronLeft, ChevronRight,
+  Users as UsersIcon, Bell, Layers3, Percent,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -18,6 +19,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/orders', icon: ShoppingCart, label: 'Orders' },
     { path: '/products', icon: Package, label: 'Products' },
+    { path: '/collections', icon: Layers3, label: 'Collections' },
+    { path: '/sales', icon: Percent, label: 'Sales' },
+    { path: '/users', icon: UsersIcon, label: 'Users' },
+    { path: '/notifications', icon: Bell, label: 'Notifications' },
     { path: '/upload', icon: UploadIcon, label: 'Upload Product' },
     { path: '/shipping', icon: Truck, label: 'Shipping' },
     { path: '/returns', icon: RotateCcw, label: 'Returns' },

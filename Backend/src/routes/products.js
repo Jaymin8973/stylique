@@ -12,7 +12,6 @@ const router = Router();
 router.get('/', auth , async (req, res) => {
   try {
     const products = await prisma.product.findMany({
-       where: { userId: req.user.id },
       orderBy: { id: 'desc' },
       include: {
         productimage: true,
@@ -53,9 +52,8 @@ router.get('/all', async (req, res) => {
 router.get('/:id',auth, async (req, res) =>{ 
   try {
     const id = Number(req.params.id);
-    const userId = Number(req.user.id);
     const product = await prisma.product.findFirst({
-      where: { id, userId },
+      where: { id },
       include: {
         productimage: true,
         variant: true,
@@ -199,8 +197,8 @@ router.put('/:id', auth,async (req, res) => {
     const id = Number(req.params.id);
     const { images, variants, ...fields } = req.body;
 
-    // Ownership check
-    const owned = await prisma.product.findFirst({ where: { id, userId: req.user.id } });
+    // Basic existence check
+    const owned = await prisma.product.findFirst({ where: { id } });
     if (!owned) return res.status(404).json({ error: 'Product not found' });
 
     const clothingFields = (({
@@ -351,7 +349,7 @@ router.put('/:id', auth,async (req, res) => {
 router.delete('/:id',auth, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const owned = await prisma.product.findFirst({ where: { id, userId: req.user.id } });
+    const owned = await prisma.product.findFirst({ where: { id } });
     if (!owned) return res.status(404).json({ error: 'Product not found' });
     await prisma.product.delete({ where: { id } });
     res.json({ success: true });

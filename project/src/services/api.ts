@@ -116,16 +116,42 @@ class ApiService {
 
   // Order methods
   async getOrders(): Promise<Order[]> {
-    return [] as Order[];
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${this.base}/api/orders/admin`, {
+      headers,
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Unauthorized');
+    }
+    if (!res.ok) {
+      throw new Error('Failed to fetch orders');
+    }
+
+    const data = await res.json();
+    return Array.isArray(data) ? (data as Order[]) : [];
   }
 
   // Dashboard methods
   async getDashboardStats(): Promise<DashboardStats> {
-    const all = await this.getProducts();
+    const [all, orders] = await Promise.all([
+      this.getProducts(),
+      this.getOrders().catch(() => [] as Order[]),
+    ]);
+
     const totalProducts = all.length;
-    const totalOrders = 0;
-    const totalRevenue = 0;
-    const lowStockProducts = all.filter(p => p.stock < 10).length;
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const lowStockProducts = all.filter((p) => p.stock < 10).length;
+
     return { totalProducts, totalOrders, totalRevenue, lowStockProducts };
   }
 }

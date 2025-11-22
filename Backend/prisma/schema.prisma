@@ -156,6 +156,8 @@ model product {
   wishlist          wishlist[]
   orderitem         orderitem[]
   reviews           review[]
+  collectionitem    collectionitem[]
+  saleproduct       saleproduct[]
 
   @@index([userId], map: "idx_product_userId")
 }
@@ -249,6 +251,7 @@ model users {
   PasswordHash String     @db.VarChar(255)
   RoleID       Int
   IsActive     Boolean?   @default(true)
+  PushToken    String?    @db.VarChar(255)
   CreatedAt    DateTime?  @default(now()) @db.DateTime(0)
   UpdatedAt    DateTime?  @default(now()) @db.DateTime(0)
   product      product[]
@@ -259,6 +262,8 @@ model users {
   address      address[]
   orders       orders[]
   reviews      review[]
+  collections  collection[]
+  sales        sale[]
 
   @@index([RoleID], map: "FK_Users_Roles")
 }
@@ -319,6 +324,66 @@ model wishlist {
   @@unique([userId, productId], map: "uniq_user_product")
   @@index([userId], map: "idx_wishlist_userId")
   @@index([productId], map: "idx_wishlist_productId")
+}
+
+model collection {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  imageUrl    String?
+  status      String            @default("draft")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  userId      Int
+  user        users             @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_collection_user")
+  items       collectionitem[]
+
+  @@index([userId], map: "idx_collection_userId")
+}
+
+model collectionitem {
+  id           Int         @id @default(autoincrement())
+  collectionId Int
+  productId    Int
+  createdAt    DateTime    @default(now())
+  collection   collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade, map: "fk_collectionitem_collection")
+  product      product     @relation(fields: [productId], references: [id], onDelete: Cascade, map: "fk_collectionitem_product")
+
+  @@unique([collectionId, productId], map: "uniq_collection_product")
+  @@index([collectionId], map: "idx_collectionitem_collectionId")
+  @@index([productId], map: "idx_collectionitem_productId")
+}
+
+model sale {
+  id            Int           @id @default(autoincrement())
+  name          String
+  description   String?
+  bannerUrl     String?
+  discountType  String        // e.g. "percent"
+  discountValue String        // stored as string for consistency
+  status        String        @default("draft") // "draft" | "active"
+  startAt       DateTime?
+  endAt         DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  userId        Int
+  user          users         @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_sale_user")
+  items         saleproduct[]
+
+  @@index([userId], map: "idx_sale_userId")
+}
+
+model saleproduct {
+  id        Int      @id @default(autoincrement())
+  saleId    Int
+  productId Int
+  createdAt DateTime @default(now())
+  sale      sale     @relation(fields: [saleId], references: [id], onDelete: Cascade, map: "fk_saleproduct_sale")
+  product   product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "fk_saleproduct_product")
+
+  @@unique([saleId, productId], map: "uniq_sale_product")
+  @@index([saleId], map: "idx_saleproduct_saleId")
+  @@index([productId], map: "idx_saleproduct_productId")
 }
 
 model address {

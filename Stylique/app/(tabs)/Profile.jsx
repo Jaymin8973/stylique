@@ -1,22 +1,18 @@
 import { AntDesign, Entypo, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import IpAddress from '../../Config.json';
+import API from '../../Api';
+
 const Profile = () => {
   const router = useRouter();
-   const [image , setImage] = useState(null);
   const [name , setName] = useState(null);
   const [email , setEmail] = useState(null);
   const [Loading , setLoading] = useState(false);
-  const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:5001`,
-});
+
   useEffect(() => {
     FetchData();
   }, []);
@@ -28,7 +24,6 @@ const Profile = () => {
       const res = await API.get(`/api/user/${UserID}`);
       console.log(res.data)
       const Name = res.data.Username;
-      setImage("https://www.bing.com/th/id/OIP.f3DM2upCo-p_NPRwBAwbKQHaHa?w=180&h=211&c=8&rs=1&qlt=90&o=6&cb=ucfimg1&pid=3.1&rm=2&ucfimg=1");
       setName(Name);
       setEmail(res.data.Email);
     } catch (err) {
@@ -63,10 +58,20 @@ const Profile = () => {
         <ScrollView  contentContainerStyle={{ flexGrow: 1 , justifyContent: 'center' }}>
         <View className="mx-7 gap-5 ">
           <View style={styles.topContent} className=" flex-row justify-around">
-            <Image
-              source={{ uri: image }}
-              style={styles.logo}
-            />
+            <View style={styles.logo}>
+              <Text style={styles.logoLetter}>
+                {(() => {
+                  const raw = (name && name.trim()) || (email && email.split('@')[0]) || 'U';
+                  const words = raw.split(/\s+/).filter(Boolean);
+                  if (words.length >= 2) {
+                    return (words[0][0] + words[1][0]).toUpperCase();
+                  }
+                  const compact = raw.replace(/[^A-Za-z0-9]/g, '');
+                  const base = compact || 'U';
+                  return base.slice(0, 2).toUpperCase();
+                })()}
+              </Text>
+            </View>
             <View className="">
               <Text style={styles.username}>{name}</Text>
               <Text className="text-xl">{email}</Text>
@@ -169,10 +174,18 @@ const styles = StyleSheet.create({
     height: 80,
     marginBottom: 10,
     borderRadius: 40,
+    backgroundColor: '#343434',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   username: {
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  logoLetter: {
+    fontSize: 32,
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

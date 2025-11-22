@@ -1,13 +1,14 @@
-import axios from 'axios';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFormik } from 'formik';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
 import * as Yup from 'yup';
-import IpAddress from '../../Config.json';
+import API from '../../Api';
 
 const Signup = () => {
   const router = useRouter();
@@ -17,9 +18,7 @@ const Signup = () => {
   const [ConfirmPassword, setConfirmPassword] = useState("");
   const [visible, setVisible] = useState(true);
   const [Loading, setLoading] = useState(false);
-  const API = axios.create({
-    baseURL: `http://${IpAddress.IpAddress}:3000`,
-  });
+
   const validationSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().email('Invalid email').required('Email is required'),
@@ -38,15 +37,18 @@ const Signup = () => {
       const lastname = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
       try {
         setLoading(true);
-        const result = await API.post(`/users/register`, {
+        const result = await API.post(`/api/auth/register`, {
+          name: values.name,
           firstname,
           lastname,
           email: values.email,
           password: values.password,
         });
+
         const token = result.data.token;
-        await SecureStore.setItemAsync('userToken', token);
-        await SecureStore.setItemAsync('userEmail', values.email);
+        const userId = String(result.data.user.id);
+        await AsyncStorage.setItem('userToken', token);
+        await SecureStore.setItemAsync('userId', userId);
         Toast.show({
           type: 'success',
           text1: 'Registration Successful',

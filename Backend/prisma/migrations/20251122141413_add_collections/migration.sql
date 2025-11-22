@@ -253,6 +253,7 @@ CREATE TABLE `users` (
     `PasswordHash` VARCHAR(255) NOT NULL,
     `RoleID` INTEGER NOT NULL,
     `IsActive` BOOLEAN NULL DEFAULT true,
+    `PushToken` VARCHAR(255) NULL,
     `CreatedAt` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
     `UpdatedAt` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
 
@@ -317,6 +318,66 @@ CREATE TABLE `wishlist` (
     INDEX `idx_wishlist_userId`(`userId`),
     INDEX `idx_wishlist_productId`(`productId`),
     UNIQUE INDEX `uniq_user_product`(`userId`, `productId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `collection` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NULL,
+    `imageUrl` VARCHAR(191) NULL,
+    `status` VARCHAR(191) NOT NULL DEFAULT 'draft',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `userId` INTEGER NOT NULL,
+
+    INDEX `idx_collection_userId`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `collectionitem` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `collectionId` INTEGER NOT NULL,
+    `productId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `idx_collectionitem_collectionId`(`collectionId`),
+    INDEX `idx_collectionitem_productId`(`productId`),
+    UNIQUE INDEX `uniq_collection_product`(`collectionId`, `productId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `sale` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NULL,
+    `bannerUrl` VARCHAR(191) NULL,
+    `discountType` VARCHAR(191) NOT NULL,
+    `discountValue` VARCHAR(191) NOT NULL,
+    `status` VARCHAR(191) NOT NULL DEFAULT 'draft',
+    `startAt` DATETIME(3) NULL,
+    `endAt` DATETIME(3) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `userId` INTEGER NOT NULL,
+
+    INDEX `idx_sale_userId`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `saleproduct` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `saleId` INTEGER NOT NULL,
+    `productId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `idx_saleproduct_saleId`(`saleId`),
+    INDEX `idx_saleproduct_productId`(`productId`),
+    UNIQUE INDEX `uniq_sale_product`(`saleId`, `productId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -442,6 +503,24 @@ ALTER TABLE `wishlist` ADD CONSTRAINT `fk_wishlist_user` FOREIGN KEY (`userId`) 
 
 -- AddForeignKey
 ALTER TABLE `wishlist` ADD CONSTRAINT `fk_wishlist_product` FOREIGN KEY (`productId`) REFERENCES `product`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `collection` ADD CONSTRAINT `fk_collection_user` FOREIGN KEY (`userId`) REFERENCES `users`(`UserID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `collectionitem` ADD CONSTRAINT `fk_collectionitem_collection` FOREIGN KEY (`collectionId`) REFERENCES `collection`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `collectionitem` ADD CONSTRAINT `fk_collectionitem_product` FOREIGN KEY (`productId`) REFERENCES `product`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `sale` ADD CONSTRAINT `fk_sale_user` FOREIGN KEY (`userId`) REFERENCES `users`(`UserID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `saleproduct` ADD CONSTRAINT `fk_saleproduct_sale` FOREIGN KEY (`saleId`) REFERENCES `sale`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `saleproduct` ADD CONSTRAINT `fk_saleproduct_product` FOREIGN KEY (`productId`) REFERENCES `product`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `address` ADD CONSTRAINT `fk_address_user` FOREIGN KEY (`userId`) REFERENCES `users`(`UserID`) ON DELETE CASCADE ON UPDATE CASCADE;
