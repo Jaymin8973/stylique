@@ -1,46 +1,67 @@
 import { SimpleLineIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import { Image } from 'expo-image';
 import BannerCarousel from '../../components/BannerCarousel';
 
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import IpAddress from '../../Config.json';
+import API from '../../Api';
 import data from '../../data.json';
 
 const Home = () => {
 
   // const [fetchedCategories, setFetchedCategories] = useState([]);
   const icons = ["symbol-female", "symbol-male", "eyeglass", "game-controller" ]
-  const Navigation = useNavigation();
   const [Categories, setCategories] = useState("men");
+  const [featuredProducts, setFeaturedProducts] = useState(data.feature_products || []);
+  const flatListRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
 
   const fetchedCategories = ["clothing","footwear","accessories","Sports"]
 
 
   useEffect(() => {
-    // fetchCategories();
+    fetchFeaturedProducts();
   }, [])
 
-  const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:3000`,
-});
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await API.get('api/products/all');
+      const allProducts = response.data || [];
+      const featured = allProducts.filter(item => item.isFeatured).slice(0, 10);
 
-  // const fetchCategories = async () => {
-  //   try {
-  //     const response = await API.get('/categories/');
-  //     setFetchedCategories(response.data.map(category => (category.name)));
-  //   } catch (error) {
-  //     if (error.response) {
-  //       console.log('Error response:', error.response.data);
-  //     }
-  //     console.log('Error message:', error.message);
-  //   }
-  // }
+      if (featured.length > 0) {
+        setFeaturedProducts(featured);
+      } else if (allProducts.length > 0) {
+        setFeaturedProducts(allProducts.slice(0, 10));
+      }
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!featuredProducts || featuredProducts.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % featuredProducts.length;
+        if (flatListRef.current) {
+          try {
+            flatListRef.current.scrollToIndex({ index: nextIndex, animated: true });
+          } catch (e) {
+            // ignore scroll errors
+          }
+        }
+        return nextIndex;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [featuredProducts]);
 
 
   return (
@@ -78,16 +99,49 @@ const Home = () => {
           </View>
           <View className="mt-5 px-5 ">
             <FlatList
-              data={data.feature_products}
+              ref={flatListRef}
+              data={featuredProducts}
               horizontal
               showsHorizontalScrollIndicator={false}
               className="overflow-visible"
-              renderItem={({ item }) => (
-                <View style={styles.productCard} className="m-4">
-                  <Image source={{ uri: item.image }} style={styles.productImage} />
-                  <Text>{item.name}</Text>
-                  <Text>{item.price}</Text>
-                </View>
+              keyExtractor={(item, index) =>
+                item?.productId?.toString() || item?.id?.toString() || index.toString()
+              }
+              renderItem={({ item, index }) => (
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: '/ProductDetail',
+                      params: { id: item?.productId || item?.id || index },
+                    })
+                  }
+                >
+                  <View style={styles.productCard} className="m-4">
+                    <Image
+                      source={{
+                        uri:
+                          item.imageUrl ||
+                          item.image ||
+                          'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400',
+                      }}
+                      style={styles.productImage}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={styles.productName}
+                    >
+                      {item.productName || item.name}
+                    </Text>
+
+                    <Text>
+                      ₹
+                      {item.sellingPrice != null
+                        ? item.sellingPrice
+                        : item.price}
+                    </Text>
+                  </View>
+                </Pressable>
               )}
             />
           </View>
@@ -104,7 +158,11 @@ const styles = StyleSheet.create({
   productCard: {
 
   },
+  productName: {
+    maxWidth: 150,
+  },
   container: {
+
     flexGrow: 1,
     justifyContent: 'flex-end',
   },
