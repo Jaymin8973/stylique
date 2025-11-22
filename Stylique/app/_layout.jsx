@@ -44,7 +44,7 @@ export default function RootLayout() {
           <Stack.Screen name="(screens)" options={{ headerShown: false }} />
     
     </Stack>
-      <Toast />
+      <Toast position="top" autoHide={true} visibilityTime={2500} topOffset={50} />
     </>
   );
 }

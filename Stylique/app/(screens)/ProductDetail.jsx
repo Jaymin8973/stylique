@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +29,7 @@ export default function ProductDetail() {
   const [wlLoading, setWlLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [inCart, setInCart] = useState(false);
 
   const bottomSheetRef = useRef(null);
 
@@ -58,6 +59,29 @@ export default function ProductDetail() {
   useEffect(() => {
     if (id && userId) checkWishlistStatus();
   }, [id, userId]);
+
+  const checkInCart = async () => {
+    try {
+      const res = await API.get('/api/cart');
+      const items = res.data?.items || [];
+      const present = items.some((it) => {
+        const pid = it.productId ?? it.product?.id ?? it.product?.productId;
+        return String(pid) === String(id);
+      });
+      setInCart(present);
+    } catch (e) {
+      // silent
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        checkInCart();
+        fetchProductRating();
+      }
+    }, [id])
+  );
 
   const fetchProductDetails = async () => {
     try {
@@ -125,6 +149,7 @@ export default function ProductDetail() {
       });
       // Toast.show({ type: 'success', text1: 'Added to cart' });
       // router.push('(tabs)/Cart'); // optional navigation
+      setInCart(true);
     } catch (e) {
       Toast.show({ type: 'error', text1: 'Failed to add to cart' });
     } finally {
@@ -159,7 +184,7 @@ export default function ProductDetail() {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: bottomSheetHeight }}>
         <StatusBar style='dark' />
         <SafeAreaView className="flex-1">
-          <View className="flex-1">
+          <View className="flex-1 ">
             {/* Header with back button */}
             <View className="absolute top-12 left-5 right-5 z-10 flex-row justify-between items-center">
               <TouchableOpacity className="w-12 h-12 bg-white/30 rounded-full justify-center items-center shadow-lg">
@@ -381,12 +406,21 @@ export default function ProductDetail() {
             <Text className="text-white text-sm font-medium">Price</Text>
             <Text className="text-white text-xl font-bold">₹{(parseFloat(product?.sellingPrice || 0) * quantity).toFixed(2)}</Text>
           </View>
-          <TouchableOpacity onPress={handleAddToCart} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
-            <Ionicons name="bag-check-sharp" size={20} color={THEME.colors.primary} />
-            <Text className="ml-2 font-bold text-base" style={{ color: THEME.colors.primary }}>
-              Add To Cart
-            </Text>
-          </TouchableOpacity>
+          {inCart ? (
+            <TouchableOpacity onPress={() => router.navigate('/Cart')} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
+              <Ionicons name="cart-outline" size={20} color={THEME.colors.primary} />
+              <Text className="ml-2 font-bold text-base" style={{ color: THEME.colors.primary }}>
+                View Cart
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={handleAddToCart} disabled={adding} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
+              <Ionicons name="bag-check-sharp" size={20} color={THEME.colors.primary} />
+              <Text className="ml-2 font-bold text-base" style={{ color: THEME.colors.primary }}>
+                {adding ? 'Adding...' : 'Add To Cart'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>

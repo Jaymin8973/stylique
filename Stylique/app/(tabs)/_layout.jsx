@@ -3,13 +3,14 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { Image } from 'expo-image';
-import { Tabs, useFocusEffect, useRouter } from 'expo-router';
+import { Stack, Tabs, useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import AboutUs from '../(slidebar)/AboutUs';
 import Setting from '../(slidebar)/Setting';
 import Support from '../(slidebar)/Support';
+import MyOrders from '../(screens)/MyOrders';
 import IpAddress from '../../Config.json';
 
 const _layout = () => {
@@ -18,18 +19,20 @@ const _layout = () => {
   const [email , setEmail] = useState(null);
   const Navigation = useNavigation();
 const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:3000`,
+  baseURL: `http://${IpAddress.IpAddress}:5001`,
 });
 
 
   const FetchData = async () => {
     try {
-      const email = await SecureStore.getItemAsync('userEmail');
-      const res = await API.post(`/users/user`, { email });
-      const Name = res.data.user.firstname + " " + res.data.user.lastname;
-      setImage(res.data.user.image);
+   
+      const UserID = await SecureStore.getItemAsync('userId');
+     const res = await API.get(`/api/user/${UserID}`);
+     console.log(res.data)
+      const Name = res.data.Username;
+      setImage("https://www.bing.com/th/id/OIP.f3DM2upCo-p_NPRwBAwbKQHaHa?w=180&h=211&c=8&rs=1&qlt=90&o=6&cb=ucfimg1&pid=3.1&rm=2&ucfimg=1");
       setName(Name);
-      setEmail(res.data.user.email);
+      setEmail(res.data.Email);
     } catch (err) {
       alert(err?.response?.data?.message || err.message);
     }
@@ -154,7 +157,6 @@ const API = axios.create({
             
           }}
         />
-
       </Tabs>
     );
   }
@@ -186,6 +188,30 @@ const API = axios.create({
             <Octicons name="home" size={24} color={focused ? "black" : "gray"} />
           ),
         }} 
+      />
+
+      <Drawer.Screen name="MyOrders" component={MyOrders}
+        options={({ navigation }) => ({
+            headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">My Orders</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'transparent' }} />
+        ),
+          drawerLabel: ({ focused, color }) => (
+            <Text style={{ fontSize: 20, color: color, fontWeight: 'bold' }}>
+              My Orders
+            </Text>
+          ),
+          drawerIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons name="clipboard-list-outline" size={24} color={focused ? "black" : "gray"} />
+          ),
+        })} 
       />
 
       <Drawer.Screen name="Setting" component={Setting}
@@ -237,7 +263,9 @@ const API = axios.create({
           ),
         }} />
 
+     
     </Drawer.Navigator>
+
   );
 };
 

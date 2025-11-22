@@ -44,24 +44,32 @@ export default function BannerCarousel({
   const autoplayRef = useRef(null);
 
   const scrollToSlide = (nextIndex) => {
-    listRef.current?.scrollToOffset({
+    if (!listRef.current) return;
+    listRef.current.scrollToOffset({
       offset: nextIndex * width,
       animated: true,
     });
   };
 
-  // Autoplay Logic (rock-solid)
+  // Autoplay Logic: just advance index on a timer
   useEffect(() => {
     if (!autoPlay || banners.length <= 1) return;
 
     autoplayRef.current = setInterval(() => {
-      const nextIndex = (index + 1) % banners.length;
-      scrollToSlide(nextIndex);
-      setIndex(nextIndex);
+      setIndex((prev) => (prev + 1) % banners.length);
     }, interval);
 
-    return () => clearInterval(autoplayRef.current);
-  }, [index, autoPlay, interval, banners.length]);
+    return () => {
+      if (autoplayRef.current) {
+        clearInterval(autoplayRef.current);
+      }
+    };
+  }, [autoPlay, interval, banners.length]);
+
+  // Whenever index changes, scroll the FlatList to that slide
+  useEffect(() => {
+    scrollToSlide(index);
+  }, [index]);
 
   return (
     <View style={styles.container}>

@@ -75,11 +75,14 @@ const PaymentMethod = () => {
         upiApp: selectedMethod === 'upi' ? upiApp || undefined : undefined,
         bank: selectedMethod === 'netbanking' ? bank || undefined : undefined,
       });
-
-      await API.delete('/api/cart/clear');
-
-      Toast.show({ type: 'success', text1: 'Payment successful', text2: 'Your order has been placed.' });
-      router.replace('(tabs)');
+      const orderRes = await API.post('/api/orders', { shipping: shippingPrice });
+      const orderId = orderRes?.data?.id;
+      Toast.show({ type: 'success', text1: 'Order placed successfully' });
+      if (orderId) {
+        router.replace({ pathname: 'OrderSummary', params: { id: String(orderId) } });
+      } else {
+        router.replace('(tabs)');
+      }
     } catch (error) {
       if (error?.response) {
         Toast.show({
@@ -179,7 +182,7 @@ const PaymentMethod = () => {
                 </View>
                 <Text className="text-gray-900 text-base">Cash On Delivery</Text>
               </View>
-              <View className={`w-5 h-5 rounded-full border-2 ${selectedMethod === 'cod' ? 'border-black' : 'border-gray-300'} items-center justify-center`}>
+              <View className={`w-6 h-6 rounded-full border-2 ${selectedMethod === 'cod' ? 'border-black' : 'border-gray-300'} items-center justify-center`}>
                 {selectedMethod === 'cod' && <View className="w-3 h-3 rounded-full bg-black" />}
               </View>
             </Pressable>

@@ -2,6 +2,17 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model ordertracking {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  status    String
+  eventAt   DateTime @default(now())
+  createdAt DateTime @default(now())
+  orders    orders   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "fk_ordertracking_order")
+
+  @@index([orderId], map: "idx_ordertracking_orderId")
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -143,6 +154,8 @@ model product {
   variant           variant[]
   cartitem          cartitem[]
   wishlist          wishlist[]
+  orderitem         orderitem[]
+  reviews           review[]
 
   @@index([userId], map: "idx_product_userId")
 }
@@ -230,67 +243,69 @@ model sellers {
 }
 
 model users {
-  UserID       Int       @id @default(autoincrement())
-  Username     String    @unique(map: "Username") @db.VarChar(100)
-  Email        String    @unique(map: "Email") @db.VarChar(150)
-  PasswordHash String    @db.VarChar(255)
+  UserID       Int        @id @default(autoincrement())
+  Username     String     @unique(map: "Username") @db.VarChar(100)
+  Email        String     @unique(map: "Email") @db.VarChar(150)
+  PasswordHash String     @db.VarChar(255)
   RoleID       Int
-  IsActive     Boolean?  @default(true)
-  CreatedAt    DateTime? @default(now()) @db.DateTime(0)
-  UpdatedAt    DateTime? @default(now()) @db.DateTime(0)
+  IsActive     Boolean?   @default(true)
+  CreatedAt    DateTime?  @default(now()) @db.DateTime(0)
+  UpdatedAt    DateTime?  @default(now()) @db.DateTime(0)
   product      product[]
   sellers      sellers[]
-  roles        roles     @relation(fields: [RoleID], references: [RoleID], onDelete: Cascade, map: "FK_Users_Roles")
+  roles        roles      @relation(fields: [RoleID], references: [RoleID], onDelete: Cascade, map: "FK_Users_Roles")
   cart         cart?
   wishlist     wishlist[]
   address      address[]
+  orders       orders[]
+  reviews      review[]
 
   @@index([RoleID], map: "FK_Users_Roles")
 }
 
 model variant {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   size      String?
   color     String?
   stock     Int
   price     String
   sku       String?
   productId Int
-  createdAt DateTime @default(now())
-  product   product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "Variant_productId_fkey")
+  createdAt DateTime   @default(now())
+  product   product    @relation(fields: [productId], references: [id], onDelete: Cascade, map: "Variant_productId_fkey")
   cartitem  cartitem[]
 
   @@index([productId], map: "Variant_productId_fkey")
 }
 
 model cart {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  users     users     @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_cart_user")
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  users     users      @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_cart_user")
   items     cartitem[]
 
   @@index([userId], map: "idx_cart_userId")
 }
 
 model cartitem {
-  id         Int       @id @default(autoincrement())
-  cartId     Int
-  productId  Int
-  variantId  Int?
-  quantity   Int       @default(1)
-  unitPrice  String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  cart       cart      @relation(fields: [cartId], references: [id], onDelete: Cascade, map: "fk_cartitem_cart")
-  product    product   @relation(fields: [productId], references: [id], onDelete: Cascade, map: "fk_cartitem_product")
-  variant    variant?  @relation(fields: [variantId], references: [id], onDelete: SetNull, map: "fk_cartitem_variant")
+  id        Int      @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  variantId Int?
+  quantity  Int      @default(1)
+  unitPrice String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cart      cart     @relation(fields: [cartId], references: [id], onDelete: Cascade, map: "fk_cartitem_cart")
+  product   product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "fk_cartitem_product")
+  variant   variant? @relation(fields: [variantId], references: [id], onDelete: SetNull, map: "fk_cartitem_variant")
 
+  @@unique([cartId, productId, variantId], map: "uniq_cart_product_variant")
   @@index([cartId], map: "idx_cartitem_cartId")
   @@index([productId], map: "idx_cartitem_productId")
   @@index([variantId], map: "idx_cartitem_variantId")
-  @@unique([cartId, productId, variantId], map: "uniq_cart_product_variant")
 }
 
 model wishlist {
@@ -323,4 +338,53 @@ model address {
   user         users    @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_address_user")
 
   @@index([userId], map: "idx_address_userId")
+}
+
+model orders {
+  id             Int             @id @default(autoincrement())
+  userId         Int
+  orderNumber    String          @unique
+  status         String
+  trackingNumber String?
+  subtotal       String
+  shipping       String
+  total          String
+  addressText    String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           users           @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_orders_user")
+  items          orderitem[]
+  tracking       ordertracking[]
+
+  @@index([userId], map: "idx_orders_userId")
+}
+
+model orderitem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  productName String
+  quantity    Int
+  unitPrice   String
+  createdAt   DateTime @default(now())
+  orders      orders   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "fk_orderitem_order")
+  product     product  @relation(fields: [productId], references: [id], onDelete: NoAction, map: "fk_orderitem_product")
+
+  @@index([orderId], map: "idx_orderitem_orderId")
+  @@index([productId], map: "idx_orderitem_productId")
+}
+
+model review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      users    @relation(fields: [userId], references: [UserID], onDelete: Cascade, map: "fk_review_user")
+  product   product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "fk_review_product")
+
+  @@unique([userId, productId], map: "uniq_review_user_product")
+  @@index([productId], map: "idx_review_productId")
 }

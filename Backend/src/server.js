@@ -9,6 +9,8 @@ import cartRouter from './routes/cart.js';
 import wishlistRouter from './routes/wishlist.js';
 import addressRouter from './routes/address.js';
 import paymentRouter from './routes/payment.js';
+import ordersRouter from './routes/orders.js';
+import ratingRouter from './routes/rating.js';
 
 dotenv.config();
 
@@ -37,6 +39,8 @@ app.use('/wishlist', wishlistRouter);
 app.use('/api/wishlist', wishlistRouter);
 app.use('/api/address', addressRouter);
 app.use('/api/payment', paymentRouter);
+app.use('/api/orders', ordersRouter);
+app.use('/rating', ratingRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
