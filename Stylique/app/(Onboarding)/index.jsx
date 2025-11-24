@@ -13,7 +13,7 @@ const Onboarding = () => {
     const checkOnboardStatus = async () => {
       const onboarded = await AsyncStorage.getItem("hasOnboarded");
       if (onboarded === "true") {
-        router.replace("/(Authentication)/Login"); 
+        router.replace("/(tabs)"); 
       } else {
         setLoading(false);
       }

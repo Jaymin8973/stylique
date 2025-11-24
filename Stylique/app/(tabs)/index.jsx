@@ -13,7 +13,6 @@ import data from '../../data.json';
 
 const Home = () => {
 
-  // const [fetchedCategories, setFetchedCategories] = useState([]);
   const icons = ["symbol-female", "symbol-male", "eyeglass", "game-controller" ]
   const [Categories, setCategories] = useState("men");
   const [featuredProducts, setFeaturedProducts] = useState(data.feature_products || []);
@@ -80,7 +79,7 @@ const Home = () => {
           try {
             flatListRef.current.scrollToIndex({ index: nextIndex, animated: true });
           } catch (e) {
-            // ignore scroll errors
+            console.error('Error scrolling FlatList:', e);
           }
         }
         return nextIndex;

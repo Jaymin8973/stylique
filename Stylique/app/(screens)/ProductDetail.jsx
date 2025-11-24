@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Stars from 'react-native-stars';
@@ -142,6 +143,11 @@ export default function ProductDetail() {
   const handleAddToCart = async () => {
     if (!id || adding) return;
     try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.push('/(Authentication)/Login');
+        return;
+      }
       setAdding(true);
       await API.post('/api/cart/add', {
         productId: Number(id),

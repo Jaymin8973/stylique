@@ -47,7 +47,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // List collections for the current user (seller dashboard)
-router.get('/', auth, async (req, res) => {
+router.get('/',  async (req, res) => {
   try {
     const userId = Number(req.user.id);
     const collections = await prisma.collection.findMany({

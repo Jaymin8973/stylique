@@ -13,6 +13,7 @@ API.interceptors.request.use(async (config) => {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+  
   } catch {}
   return config;
 });

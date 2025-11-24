@@ -9,7 +9,7 @@ const router = Router();
 
 
 // List all products
-router.get('/', auth , async (req, res) => {
+router.get('/',  async (req, res) => {
   try {
     const products = await prisma.product.findMany({
       orderBy: { id: 'desc' },
@@ -49,7 +49,7 @@ router.get('/all', async (req, res) => {
 });
 
 // Get one product by id
-router.get('/:id',auth, async (req, res) =>{ 
+router.get('/:id', async (req, res) =>{ 
   try {
     const id = Number(req.params.id);
     const product = await prisma.product.findFirst({

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
+
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import API from '../../Api';
@@ -12,10 +13,39 @@ const Profile = () => {
   const [name , setName] = useState(null);
   const [email , setEmail] = useState(null);
   const [Loading , setLoading] = useState(false);
-
+  const [token , setToken] = useState(null);
+  
+  
   useEffect(() => {
-    FetchData();
+    const init = async () => {
+      const storedToken = await AsyncStorage.getItem('userToken');
+      setToken(storedToken);
+      if (token) {
+        await FetchData();
+      }
+    };
+    
+    init();
   }, []);
+  
+  if (!token) {
+    return (
+      <>
+      
+          <SafeAreaView className="flex-1 justify-center items-center ">
+            <Text className="text-lg mb-4">You are not logged in.</Text>
+            <TouchableOpacity onPress={() => router.push('/(Authentication)/Login')}>   
+              <View className="bg-blue-500 px-6 py-3 rounded-full">
+                <Text className="text-white text-lg">Go to Login</Text>
+              </View>
+            </TouchableOpacity>
+          </SafeAreaView>
+          </>
+        )
+      }
+
+      
+        console.log(!token)
 
   const FetchData = async () => {
     try {
@@ -36,9 +66,10 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-    await SecureStore.deleteItemAsync('userEmail');
-    await AsyncStorage.removeItem('userToken');
-    router.replace('Login');
+    await SecureStore.deleteItemAsync('userId');
+    AsyncStorage.clear()
+    router.replace('/(Authentication)/Login');
+
     } catch (error) {
       alert(error?.response?.data?.message || error.message);
     }
@@ -53,7 +84,6 @@ const Profile = () => {
   }
 
   return (
-    
     <SafeAreaView className= "flex-1">
         <ScrollView  contentContainerStyle={{ flexGrow: 1 , justifyContent: 'center' }}>
         <View className="mx-7 gap-5 ">

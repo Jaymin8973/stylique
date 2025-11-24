@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import API from '../../Api';
 import { THEME } from '../../constants/Theme';
 import { ThemedButton, ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PaymentMethod = () => {
   const router = useRouter();
@@ -45,6 +46,17 @@ const PaymentMethod = () => {
     const re = /^[a-zA-Z0-9._-]{3,}@[a-zA-Z]{2,}$/;
     return re.test(upiId.trim());
   }, [upiId]);
+
+  useEffect(() => {
+    const ensureLoggedIn = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.push('/(Authentication)/Login');
+      }
+    };
+
+    ensureLoggedIn();
+  }, []);
 
   const handlePlaceOrder = async () => {
     if (!amount || amount <= 0) {

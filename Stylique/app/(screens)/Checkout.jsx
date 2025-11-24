@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../../Api';
 import { THEME } from '../../constants/Theme';
 import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
@@ -40,7 +41,16 @@ const Checkout = () => {
   };
 
   useEffect(() => {
-    loadData();
+    const init = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.push('/(Authentication)/Login');
+        return;
+      }
+      await loadData();
+    };
+
+    init();
   }, []);
 
   const subtotal = cart?.subtotal || 0;

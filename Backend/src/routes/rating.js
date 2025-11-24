@@ -4,7 +4,6 @@ import authAny from '../middleware/authAny.js';
 
 const router = Router();
 
-router.use(authAny);
 
 // Get aggregate rating for a product
 router.get('/:productId', async (req, res) => {

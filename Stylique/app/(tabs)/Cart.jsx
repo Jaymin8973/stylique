@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../../Api';
 
 const Cart = () => {
@@ -25,11 +26,29 @@ const Cart = () => {
     }
   };
 
+  const ensureLoggedInAndFetch = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    if (!token) {
+      router.push('/(Authentication)/Login');
+      return;
+    }
+    await fetchCart();
+  };
+
   useFocusEffect(
     useCallback(() => {
-      fetchCart();
+      ensureLoggedInAndFetch();
     }, [])
   );
+
+  const handleCheckout = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    if (!token) {
+      router.push('/(Authentication)/Login');
+      return;
+    }
+    router.push('Checkout');
+  };
 
   const updateQty = async (itemId, qty) => {
     try {
@@ -37,7 +56,7 @@ const Cart = () => {
         await API.delete(`/api/cart/item/${itemId}`);
         setItems((prev) => prev.filter((i) => i.id !== itemId));
       } else {
-        const res = await API.patch(`/api/cart/item/${itemId}` , { quantity: qty });
+        const res = await API.patch(`/api/cart/item/${itemId}`, { quantity: qty });
         setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, quantity: res.data.quantity } : i)));
       }
       const newSubtotal = items.reduce((sum, it) => sum + (it.id === itemId ? (qty <= 0 ? 0 : parseFloat(it.unitPrice || '0') * qty) : parseFloat(it.unitPrice || '0') * it.quantity), 0);
@@ -98,7 +117,7 @@ const Cart = () => {
   }
 
   return (
-    <View style={{ flex: 1 , backgroundColor:'white' }}>
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.id)}
@@ -110,7 +129,7 @@ const Cart = () => {
           <Text style={styles.subLabel}>Subtotal</Text>
           <Text style={styles.subValue}>₹{Number(subtotal).toFixed(2)}</Text>
         </View>
-        <TouchableOpacity style={styles.checkoutBtn} onPress={() => router.push('Checkout')}>
+        <TouchableOpacity style={styles.checkoutBtn} onPress={handleCheckout}>
           <Text style={styles.checkoutText}>Checkout</Text>
         </TouchableOpacity>
       </View>

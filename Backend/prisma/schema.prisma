@@ -8,7 +8,7 @@ model ordertracking {
   status    String
   eventAt   DateTime @default(now())
   createdAt DateTime @default(now())
-  orders    orders   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "fk_ordertracking_order")
+  orders    orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId], map: "idx_ordertracking_orderId")
 }
@@ -16,6 +16,7 @@ model ordertracking {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 model accessorydetail {

@@ -12,19 +12,18 @@ import MyOrders from '../(screens)/MyOrders';
 import API from '../../Api';
 
 const _layout = () => {
-  const [image , setImage] = useState(null);
   const [name , setName] = useState(null);
   const [email , setEmail] = useState(null);
   const FetchData = async () => {
     try {
-   
-      const UserID = await SecureStore.getItemAsync('userId');
+    const UserID = await SecureStore.getItemAsync('userId');
+    if (UserID) {
      const res = await API.get(`/api/user/${UserID}`);
      console.log(res.data)
       const Name = res.data.Username;
-      setImage("https://www.bing.com/th/id/OIP.f3DM2upCo-p_NPRwBAwbKQHaHa?w=180&h=211&c=8&rs=1&qlt=90&o=6&cb=ucfimg1&pid=3.1&rm=2&ucfimg=1");
       setName(Name);
       setEmail(res.data.Email);
+    }
     } catch (err) {
       alert(err?.response?.data?.message || err.message);
     }

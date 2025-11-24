@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -35,97 +35,84 @@ const slides = [
   },
 ];
 
-export default function Onboarding({ navigation }) {
+export default function Onboarding() {
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // AUTO SCROLL FULL SLIDE (TEXT + IMAGE)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nextIndex =
+        currentIndex === slides.length - 1 ? 0 : currentIndex + 1;
+
+      flatListRef.current?.scrollToIndex({
+        index: nextIndex,
+        animated: true,
+      });
+
+      setCurrentIndex(nextIndex);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentIndex]);
+
   const handleScroll = (event) => {
-    const slideIndex = Math.round(
-      event.nativeEvent.contentOffset.x / width
-    );
-    setCurrentIndex(slideIndex);
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    setCurrentIndex(index);
   };
 
   const handleNext = async () => {
-    if (currentIndex < slides.length - 1) {
-      flatListRef.current.scrollToIndex({ index: currentIndex + 1 });
-    } else {
-      await AsyncStorage.setItem('hasOnboarded', 'true');
-      router.replace("Login");
-    }
+    await AsyncStorage.setItem("hasOnboarded", "true");
+    router.replace("/(tabs)");
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.slide}>
       <View style={styles.topPart}>
-        <View className="top-16 gap-5">
-          <Text className="text-center text-2xl font-bold">{item.title}</Text>
-          <Text className="text-center">{item.subtitle}</Text>
+        <View style={{ top: 64, gap: 20 }}>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.subtitle}>{item.subtitle}</Text>
         </View>
-        <View
-          style={{
-            height: 350,
-            width: 270,
-            borderRadius: 25,
-            backgroundColor: '#E7E8E9',
-            overflow: 'hidden',
-            alignItems: 'center',
-            justifyContent: 'center',
-            top: 100
-          }}
-        >
-          <Image
-            source={item.image}
-            style={{
-              width: 400,
-              height: 600,
-              resizeMode: 'cover',
-              top: 140
-            }}
-          />
+
+        <View style={styles.imageBox}>
+          <Image source={item.image} style={styles.image} />
         </View>
       </View>
 
-
-      <View style={styles.bottomPart}>
-
-        <View style={styles.pagination}>
-          {slides.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                currentIndex === index && styles.activeDot,
-              ]}
-            />
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleNext} className="bg-[#FFFFFF40]">
-          <Text style={styles.buttonText}>
-           Shopping Now
-          </Text>
-        </TouchableOpacity>
-
+      <View style={styles.pagination}>
+        {slides.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              currentIndex === index && styles.activeDot,
+            ]}
+          />
+        ))}
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View >
-        <FlatList
-          data={slides}
-          renderItem={renderItem}
-          horizontal
-          scrollEnabled={false}
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.id}
-          onScroll={handleScroll}
-          ref={flatListRef}
-        />
+      {/* AUTO-SCROLLING SLIDES */}
+      <FlatList
+        data={slides}
+        renderItem={renderItem}
+        horizontal
+        pagingEnabled
+        scrollEnabled={true}
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
+        onScroll={handleScroll}
+        ref={flatListRef}
+      />
 
+      {/* FIXED BUTTON */}
+      <View style={styles.fixedButtonContainer}>
+        <TouchableOpacity style={styles.button} onPress={handleNext}>
+          <Text style={styles.buttonText}>Shopping Now</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -138,34 +125,31 @@ const styles = StyleSheet.create({
   slide: {
     width,
     height,
+    alignItems: "center",
   },
   topPart: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
   },
-  bottomPart: {
-    flex: 1,
-    backgroundColor: "#464447",
+  imageBox: {
+    height: 350,
+    width: 270,
+    borderRadius: 25,
+    backgroundColor: "#E7E8E9",
+    overflow: "hidden",
     alignItems: "center",
-    paddingHorizontal: 20,
-    zIndex: -10,
     justifyContent: "center",
-    gap: 20,
+    top: 100,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "gray",
-    textAlign: "center",
+  image: {
+    width: 400,
+    height: 600,
+    resizeMode: "cover",
+    top: 140,
   },
   pagination: {
     flexDirection: "row",
-    alignSelf: "center",
+    marginBottom: 20,
   },
   dot: {
     height: 8,
@@ -177,8 +161,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: "#fff",
+    backgroundColor: "white",
     width: 8,
+  },
+
+  // FIXED BUTTON
+  fixedButtonContainer: {
+    position: "absolute",
+    bottom: 150,
+    width: "100%",
+    alignItems: "center",
   },
   button: {
     paddingHorizontal: 50,
@@ -186,6 +178,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     borderColor: "white",
     borderWidth: 1,
+    backgroundColor: "#FFFFFF40",
   },
   buttonText: {
     color: "#fff",
@@ -193,4 +186,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  title: {
+    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  subtitle: {
+    textAlign: "center",
+  },
 });
