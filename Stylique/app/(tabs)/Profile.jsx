@@ -7,15 +7,16 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import API from '../../Api';
+import { Image } from 'expo-image';
 
 const Profile = () => {
   const router = useRouter();
-  const [name , setName] = useState(null);
-  const [email , setEmail] = useState(null);
-  const [Loading , setLoading] = useState(false);
-  const [token , setToken] = useState(null);
-  
-  
+  const [name, setName] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [Loading, setLoading] = useState(false);
+  const [token, setToken] = useState(null);
+
+
   useEffect(() => {
     const init = async () => {
       const storedToken = await AsyncStorage.getItem('userToken');
@@ -24,28 +25,12 @@ const Profile = () => {
         await FetchData();
       }
     };
-    
-    init();
-  }, []);
-  
-  if (!token) {
-    return (
-      <>
-      
-          <SafeAreaView className="flex-1 justify-center items-center ">
-            <Text className="text-lg mb-4">You are not logged in.</Text>
-            <TouchableOpacity onPress={() => router.push('/(Authentication)/Login')}>   
-              <View className="bg-blue-500 px-6 py-3 rounded-full">
-                <Text className="text-white text-lg">Go to Login</Text>
-              </View>
-            </TouchableOpacity>
-          </SafeAreaView>
-          </>
-        )
-      }
 
-      
-        console.log(!token)
+    init();
+  }, [token]);
+
+
+  console.log(!token)
 
   const FetchData = async () => {
     try {
@@ -66,9 +51,9 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-    await SecureStore.deleteItemAsync('userId');
-    AsyncStorage.clear()
-    router.replace('/(Authentication)/Login');
+      await SecureStore.deleteItemAsync('userId');
+      AsyncStorage.clear()
+      router.replace('/(Authentication)/Login');
 
     } catch (error) {
       alert(error?.response?.data?.message || error.message);
@@ -84,35 +69,47 @@ const Profile = () => {
   }
 
   return (
-    <SafeAreaView className= "flex-1">
-        <ScrollView  contentContainerStyle={{ flexGrow: 1 , justifyContent: 'center' }}>
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="mx-7 gap-5 ">
-          <View style={styles.topContent} className=" flex-row justify-around">
-            <View style={styles.logo}>
-              <Text style={styles.logoLetter}>
-                {(() => {
-                  const raw = (name && name.trim()) || (email && email.split('@')[0]) || 'U';
-                  const words = raw.split(/\s+/).filter(Boolean);
-                  if (words.length >= 2) {
-                    return (words[0][0] + words[1][0]).toUpperCase();
-                  }
-                  const compact = raw.replace(/[^A-Za-z0-9]/g, '');
-                  const base = compact || 'U';
-                  return base.slice(0, 2).toUpperCase();
-                })()}
-              </Text>
+
+          {token ? (
+            <View style={styles.topContent} className=" flex-row justify-between ">
+              <View style={styles.logo}>
+                <Text style={styles.logoLetter}>
+                  {(() => {
+                    const raw = (name && name.trim()) || (email && email.split('@')[0]) || 'U';
+                    const words = raw.split(/\s+/).filter(Boolean);
+                    if (words.length >= 2) {
+                      return (words[0][0] + words[1][0]).toUpperCase();
+                    }
+                    const compact = raw.replace(/[^A-Za-z0-9]/g, '');
+                    const base = compact || 'U';
+                    return base.slice(0, 2).toUpperCase();
+                  })()}
+                </Text>
+              </View>
+              <View className="">
+                <Text style={styles.username}>{name}</Text>
+                <Text className="text-xl">{email}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => (router.push("EditProfile"))}
+              >
+                <AntDesign name="setting" size={24} color="#343434" />
+              </TouchableOpacity>
             </View>
-            <View className="">
-              <Text style={styles.username}>{name}</Text>
-              <Text className="text-xl">{email}</Text>
+          ) : (
+            <View className=" flex-row items-center justify-between mt-6 ">
+              <Image source={require('../../assets/images/Stylique_Logo.png')} style={{ width: 100, height: 100,  borderRadius:50  }} />
+              <TouchableOpacity onPress={() => router.push('/(Authentication)/Login')}>
+                <View className="border border-gray-300 px-6 py-3 rounded-md">
+                  <Text className="text-[#343434] text-lg font-semibold">Login / Signup</Text>
+                </View>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={() => (router.push("EditProfile"))}
-            >
-              <AntDesign name="setting" size={24} color="#343434" />
-            </TouchableOpacity>
-          </View>
-          <View className="rounded-2xl border border-gray-300  px-4">
+          )}
+          <View className="rounded-2xl border border-gray-300  px-4 mt-16">
             <TouchableOpacity onPress={() => (router.push("Address"))}>
               <View className="flex-row mt-10 items-center justify-between border-b border-gray-300 pb-3 ">
                 <View className="flex-row gap-3 items-center">
@@ -177,7 +174,7 @@ const Profile = () => {
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleLogout}>
-              <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
+              <View className="flex-row  mt-10 items-center justify-between  pb-3">
                 <View className="flex-row gap-3 items-center">
                   <MaterialIcons name="logout" size={24} color="#343434" />
                   <Text className="text-2xl">Log out</Text>
@@ -187,8 +184,8 @@ const Profile = () => {
             </TouchableOpacity>
           </View>
         </View>
-    </ScrollView>
-      </SafeAreaView>
+      </ScrollView>
+    </SafeAreaView>
   )
 
 }

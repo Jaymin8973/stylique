@@ -10,6 +10,7 @@ import Setting from '../(slidebar)/Setting';
 import Support from '../(slidebar)/Support';
 import MyOrders from '../(screens)/MyOrders';
 import API from '../../Api';
+import { Image } from 'expo-image';
 
 const _layout = () => {
   const [name , setName] = useState(null);
@@ -102,7 +103,9 @@ const _layout = () => {
             <View style={{flex:1, backgroundColor: 'white' }} />
           ),
             headerTitle: () => (
-              <Text className="text-2xl font-bold">Stylique</Text>
+              <View className=" items-center">
+                <Image source={require('../../assets/images/Stylique_Text_Logo.png')} style={{ width: 100, height: 100, resizeMode: 'contain' }} />
+              </View>
             ),
             headerTitleAlign: 'center',
             headerRight: () => (

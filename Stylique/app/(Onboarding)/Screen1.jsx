@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     borderColor: "white",
     borderWidth: 1,
-    backgroundColor: "#FFFFFF40",
+    backgroundColor: "#343434",
   },
   buttonText: {
     color: "#fff",
