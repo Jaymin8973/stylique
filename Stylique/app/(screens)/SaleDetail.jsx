@@ -15,12 +15,46 @@ const SaleDetail = () => {
   const [sale, setSale] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [wishlistItems, setWishlistItems] = useState([]);
   useEffect(() => {
     if (id) {
       fetchSale();
     }
   }, [id]);
+
+    useEffect(() => {
+    if (id) fetchUserWishlist();
+  }, [id]);
+
+    const fetchUserWishlist = async () => {
+    try {
+      if (!id) return;
+      const response = await API.get(`/wishlist/user/${id}`);
+      const wishlistProductIds = response.data.map(item => item.productId);
+      setWishlistItems(wishlistProductIds);
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+    }
+  };
+
+  const toggleWishlist = async (productId) => {
+    try {
+      if (!id) return;
+      const isInWishlist = wishlistItems.includes(productId);
+
+      if (isInWishlist) {
+        // Remove from wishlist
+        await API.post('/wishlist/remove', { user_id: id, productId });
+        setWishlistItems(wishlistItems.filter(id => id !== productId));
+      } else {
+        // Add to wishlist
+        await API.post('/wishlist/add', { user_id: id, productId });
+        setWishlistItems([...wishlistItems, productId]);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+    }
+  };
 
   const fetchSale = async () => {
     try {
@@ -73,39 +107,50 @@ const SaleDetail = () => {
     const pid = item?.productId || item?.id || index;
 
     return (
-      <Pressable
-        key={pid}
-        onPress={() =>
-          router.push({
-            pathname: 'ProductDetail',
-            params: { id: pid },
-          })
-        }
-        className="mb-4"
-        style={{ width: '48%', marginHorizontal: 15 }}
-      >
-        <View className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-          <Image
-            source={{
-              uri:
-                item?.imageUrl ||
-                'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400',
-            }}
-            style={styles.productImage}
-          />
-          <View className="p-3">
-            <Text className="font-semibold text-gray-800 mb-1" numberOfLines={1}>
-              {item?.productName || 'Unknown Product'}
-            </Text>
-            <Text className="text-sm text-gray-500 mb-2">
-              {item?.brand || 'Stylique'}
-            </Text>
-            <Text className="text-lg font-bold text-gray-900">
-              ₹{item?.sellingPrice || '0.00'}
-            </Text>
-          </View>
-        </View>
-      </Pressable>
+     <Pressable
+            onPress={() => router.push({
+              pathname: 'ProductDetail',
+              params: { id: item?.productId || item?.id || index }
+            })}
+            className="mb-4 mt-10"
+            style={{ width: '45%' }}
+          >
+            <View className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+              <View className="relative">
+                <Image
+                  source={{
+                    uri: item.imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400'
+                  }}
+                  style={styles.productImage}
+                />
+                <Pressable
+                  onPress={() => toggleWishlist(item?.productId || item?.id)}
+                  className="absolute top-2 left-2 bg-white/90 rounded-full p-2"
+                >
+                  <Ionicons
+                    name={wishlistItems.includes(item?.productId || item?.id) ? 'heart' : 'heart-outline'}
+                    size={18}
+                    color={wishlistItems.includes(item?.productId || item?.id) ? '#e74c3c' : '#343434'}
+                  />
+                </Pressable>
+               
+              </View>
+              <View className="p-3">
+                <Text className="font-semibold text-gray-800 mb-1" numberOfLines={1}>
+                  {item?.productName || 'Unknown Product'}
+                </Text>
+                <Text className="text-sm text-gray-500 mb-2">
+                  {item?.brand || 'Stylique'}
+                </Text>
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-lg font-bold text-gray-900">
+                    ₹{item?.sellingPrice || '0.00'}
+                  </Text>
+    
+                </View>
+              </View>
+            </View>
+          </Pressable>
     );
   };
 
@@ -128,15 +173,15 @@ const SaleDetail = () => {
 
   return (
     <View className="flex-1 bg-white">
+      {renderHeader()}
       <FlatList
         data={products}
         keyExtractor={(item, index) =>
           item?.productId?.toString() || item?.id?.toString() || index.toString()
         }
         numColumns={2}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
-        contentContainerStyle={{ paddingTop: 0, paddingBottom: 24 }}
-        ListHeaderComponent={renderHeader}
+        columnWrapperStyle={{ justifyContent: 'space-between'}}
+        contentContainerStyle={{ paddingTop: 0, paddingBottom: 24 ,marginHorizontal: 16 }}
         renderItem={renderProduct}
         showsVerticalScrollIndicator={false}
       />
@@ -146,7 +191,7 @@ const SaleDetail = () => {
 
 const styles = StyleSheet.create({
   heroContainer: {
-    height: 320,
+    height: 250,
     backgroundColor: '#E5E5E5',
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
@@ -155,6 +200,7 @@ const styles = StyleSheet.create({
   heroImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   heroSafeArea: {
     position: 'absolute',
@@ -177,16 +223,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sheetTopWrapper: {
-    marginTop: -24,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-    marginBottom: 8,
-  },
+
   productImage: {
     width: '100%',
     height: 200,

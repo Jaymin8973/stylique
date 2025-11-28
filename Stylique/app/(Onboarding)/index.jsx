@@ -20,7 +20,7 @@ const Onboarding = () => {
     };
 
     checkOnboardStatus();
-  }, [router]);
+  }, []);
 
   if (loading) {
     return (

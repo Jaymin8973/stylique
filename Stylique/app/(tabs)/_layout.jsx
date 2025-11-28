@@ -20,7 +20,6 @@ const _layout = () => {
     const UserID = await SecureStore.getItemAsync('userId');
     if (UserID) {
      const res = await API.get(`/api/user/${UserID}`);
-     console.log(res.data)
       const Name = res.data.Username;
       setName(Name);
       setEmail(res.data.Email);
@@ -136,13 +135,54 @@ const _layout = () => {
         />
         <Tabs.Screen
           name="Search"
-          options={{
-            title: "",
+          options={({ navigation }) => ({
+            headerLeft: () => (
+              <Pressable onPress={() => navigation.getParent()?.openDrawer()} className="ml-8">
+               <MaterialIcons name="notes" size={30} color="black" className="" style={{ transform: [{ scaleY: -1 }] }} />
+              </Pressable>
+            ),
+            drawerLabel: ({ focused, color }) => (
+              <Text style={{ fontSize: 20, color: color, fontWeight: 'bold' }}>
+                Homepage
+              </Text>
+            ),
+            drawerIcon: ({ color, size, focused }) => (
+              <Octicons name="home" size={24} color={focused ? "black" : "gray"} />
+            ),
+               headerBackground: () => (
+            <View style={{flex:1, backgroundColor: 'white' }} />
+          ),
+            headerTitle: () => (
+              <View className=" items-center">
+               <Text className="text-2xl font-bold">Search</Text>
+              </View>
+            ),
+            headerTitleAlign: 'center',
+            headerRight: () => (
+              <Pressable onPress={() => router.push("/(screens)/Notification")} className="mr-8" >
+                <View>
+                  <FontAwesome name='bell-o' size={25} color={'black'} />
+                  {hasUnread && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: -2,
+                        right: -2,
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: 'red',
+                      }}
+                    />
+                  )}
+                </View>
+              </Pressable>
+            ),
+             title: "",
             tabBarIcon: ({ color, size }) => (
               <FontAwesome name="search" size={24} color={color} />
             ),
-            headerShown:false
-          }}
+          })}
         />
         <Tabs.Screen
           name="Cart"

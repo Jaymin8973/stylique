@@ -77,7 +77,7 @@ const _layout = () => {
         ),
       })} />
 
-  
+
 
       <Stack.Screen name='Addnewcard' options={({ navigation }) => ({
         headerLeft: () => (
@@ -93,7 +93,7 @@ const _layout = () => {
         ),
       })} />
 
-         <Stack.Screen name='Feedback' options={({ navigation }) => ({
+      <Stack.Screen name='Feedback' options={({ navigation }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />
@@ -108,7 +108,7 @@ const _layout = () => {
       })} />
 
 
-       <Stack.Screen name='AddressForm' options={({ navigation }) => ({
+      <Stack.Screen name='AddressForm' options={({ navigation }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />
@@ -137,7 +137,7 @@ const _layout = () => {
         ),
       })} />
 
-           <Stack.Screen name='Address' options={({ navigation }) => ({
+      <Stack.Screen name='Address' options={({ navigation }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />
@@ -151,7 +151,7 @@ const _layout = () => {
         ),
       })} />
 
-         <Stack.Screen name='AlllProducts' options={({ navigation }) => ({
+      <Stack.Screen name='AlllProducts' options={({ navigation }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />
@@ -161,16 +161,16 @@ const _layout = () => {
           <Text className="text-2xl font-bold">All Products</Text>
         ),
         headerBackground: () => (
-          <View style={{ 
-            backgroundColor: 'white', 
+          <View style={{
+            backgroundColor: 'white',
             flex: 1,
           }} />
         ),
       })} />
 
 
-   <Stack.Screen name='ProductDetail'  options={({ navigation }) => ({
-       headerShown:false,
+      <Stack.Screen name='ProductDetail' options={({ navigation }) => ({
+        headerShown: false,
       })} />
 
       <Stack.Screen name='Wishlist' options={({ navigation }) => ({
@@ -183,20 +183,38 @@ const _layout = () => {
           <Text className="text-2xl font-bold">My Wishlist</Text>
         ),
         headerBackground: () => (
-          <View style={{ backgroundColor: 'white' , flex:1 }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
-       <Stack.Screen name='CollectionDetail' options={({ navigation }) => ({
-        headerShown:false
+      <Stack.Screen name='CollectionDetail' options={({ navigation , route }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">
+            {route.params?.title ?? "Collection"}
+          </Text>
+        ),
+
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
+        ),
       })} />
 
 
- <Stack.Screen name='SaleDetail' options={({ navigation }) => ({
-        headerShown:false
+      <Stack.Screen name='SaleDetail'options={({ navigation , route }) => ({
+        headerShown: false
       })} />
+
+
+
 
     </Stack>
+
+
 
 
 

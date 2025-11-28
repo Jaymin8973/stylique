@@ -30,14 +30,12 @@ const Profile = () => {
   }, [token]);
 
 
-  console.log(!token)
 
   const FetchData = async () => {
     try {
       setLoading(true);
       const UserID = await SecureStore.getItemAsync('userId');
       const res = await API.get(`/api/user/${UserID}`);
-      console.log(res.data)
       const Name = res.data.Username;
       setName(Name);
       setEmail(res.data.Email);

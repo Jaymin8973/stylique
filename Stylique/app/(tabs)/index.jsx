@@ -13,53 +13,54 @@ import data from '../../data.json';
 
 const Home = () => {
 
-  const icons = ["symbol-female", "symbol-male", "eyeglass", "game-controller"]
+  const icons = ["tag", "emotsmile", "eyeglass", "wallet"]
   const [Categories, setCategories] = useState("clothing");
-  const [featuredProducts, setFeaturedProducts] = useState(data.feature_products || []);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [sales, setSales] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
-
-  const fetchedCategories = ["clothing", "footwear", "accessories", "Sports"]
+  const fetchedCategories = ["All", "clothing", "footwear", "accessories"]
 
 
   useEffect(() => {
 
-    fetchFeaturedProducts();
+
     fetchCollections();
     fetchSales();
-  }, [])
+  }, []);
+
+  useEffect(() => {
+  filterAndSortProducts();
+}, [Categories]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    fetchFeaturedProducts();
+    filterAndSortProducts();
     fetchCollections();
     fetchSales();
-
     await new Promise(resolve => setTimeout(resolve, 1500));
-
     setRefreshing(false);
   };
 
-  const fetchFeaturedProducts = async () => {
+  const filterAndSortProducts = async () => {
+    const response = await API.get('api/products/all');
+    let filtered = response.data || [];
 
-    try {
-      const response = await API.get('api/products/all');
-      const allProducts = response.data || [];
-      const featured = allProducts.filter(item => item.isFeatured).slice(0, 10);
-
-      if (featured.length > 0) {
-        setFeaturedProducts(featured);
-      } else if (allProducts.length > 0) {
-        setFeaturedProducts(allProducts.slice(0, 10));
-      }
-    } catch (error) {
-      console.error('Error fetching featured products:', error);
+    if (Categories !== 'All') {
+      filtered = filtered.filter(item =>
+        item.category.toLowerCase() === Categories.toLowerCase()
+      );
+      filtered = filtered.slice(0, 10);
     }
+    else if (filtered.length > 0) {
+       filtered = filtered.slice(0, 10);
+    }
+
+    setFeaturedProducts(filtered);
   };
+
 
   const fetchCollections = async () => {
 
@@ -81,73 +82,73 @@ const Home = () => {
   };
 
 
-  useEffect(() => {
-    if (!featuredProducts || featuredProducts.length === 0) return;
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % featuredProducts.length;
-        if (flatListRef.current) {
-          try {
-            flatListRef.current.scrollToIndex({ index: nextIndex, animated: true });
-          } catch (e) {
-            console.error('Error scrolling FlatList:', e);
-          }
-        }
-        return nextIndex;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [featuredProducts]);
 
   const collectionBanners = (collections || [])
     .filter((c) => c.imageUrl)
     .map((c) => ({ id: String(c.id), image: c.imageUrl }));
 
   return (
-
-    
-      <ScrollView horizontal={false} contentContainerStyle={styles.container} refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
-      }>
-        <View className="flex-row my-5  w-screen justify-around ">
-          {fetchedCategories.map((category, index) => (
-            <Pressable key={index} onPress={() => setCategories(category)}>
-              <View className="flex justify-center  items-center">
-                <View className={Categories === category ? `flex justify-center  items-center rounded-full h-20 w-20 border border-[#3A2C27]` : 'flex justify-center  items-center rounded-full h-20 w-20'}>
-                  <View className={Categories === category ? "bg-[#3A2C27] rounded-full justify-center items-center" : ' rounded-full justify-center items-center bg-[#F3F3F3]'} style={{ height: 60, width: 60 }}>
-                    <SimpleLineIcons
-                      name={icons[index] ? icons[index].trim() : "question"}
-                      size={24}
-                      color={Categories === category ? "white" : "gray"}
-                    />
-
-                  </View>
-                </View>
-                <Text className="text-center mt-2">{category}</Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
+    <ScrollView horizontal={false} contentContainerStyle={styles.container} refreshControl={
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
+    }>
+  <View className="flex-row my-5 w-screen justify-around">
+  {fetchedCategories.map((category, index) => (
+    <Pressable key={index} onPress={() => setCategories(category)}>
       
-      {collectionBanners.length > 0 ? (
-        <BannerCarousel
-          banners={collectionBanners}
-          onPressCta={(item) =>
-            router.push({
-              pathname: '/(screens)/CollectionDetail',
-              params: { id: item.id },
-            })
-          }
-        />
-      ) : (
-        <BannerCarousel onPressCta={() => router.push('/AlllProducts')} />
-      )}
+  
+      <View
+        style={{
+          height: 65,                
+          width: 65,                 
+          borderRadius: 32.5,          
+          borderWidth: Categories === category ? 1 : 0,
+          borderColor: "#3A2C27",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+      
+        <View
+          style={{
+            height: 55,
+            width: 55,
+            borderRadius: 27.5,        
+            backgroundColor:
+              Categories === category ? "#3A2C27" : "#F3F3F3",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <SimpleLineIcons
+            name={icons[index] ? icons[index].trim() : "question"}
+            size={24}
+            color={Categories === category ? "white" : "gray"}
+          />
+        </View>
 
+      </View>
+
+      <Text className="text-center mt-2">{category}</Text>
+
+    </Pressable>
+  ))}
+</View>
+
+
+
+  <BannerCarousel
+    banners={collectionBanners}
+    onPressCta={(item) =>
+      router.push({
+        pathname: "/(screens)/CollectionDetail",
+        params: { id: item.id },
+      })
+    }
+  />
       <View className="flex-row  items-center px-5 mt-8 justify-between">
         <Text className="text-3xl font-bold">Recently Added</Text>
         <Pressable onPress={() => router.push('/AlllProducts')}>
@@ -172,9 +173,9 @@ const Home = () => {
                   params: { id: item?.productId || item?.id || index },
                 })
               }
-              
+
             >
-              <View style={styles.productCard} className="m-5 border border-gray-200 rounded-lg p-3 bg-white shadow-md">
+              <View style={styles.productCard} className="m-2  bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                 <Image
                   source={{
                     uri:
@@ -184,6 +185,7 @@ const Home = () => {
                   }}
                   style={styles.productImage}
                 />
+                <View className="p-3">
                 <Text
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -198,6 +200,7 @@ const Home = () => {
                     ? item.sellingPrice
                     : item.price}
                 </Text>
+                </View>
               </View>
             </Pressable>
           )}
@@ -234,7 +237,7 @@ const Home = () => {
                   }
                 >
                   <View className="bg-white rounded-3xl overflow-hidden" style={{ elevation: 2 }}>
-                    <View style={{ borderRadius: 24, overflow: 'hidden', height: 160 }}>
+                    <View style={{ borderRadius: 24, overflow: 'hidden', height: 200 }}>
                       <Image
                         source={{
                           uri:
@@ -251,10 +254,11 @@ const Home = () => {
           );
         })()
       )}
-      </ScrollView>
+    </ScrollView>
 
   )
-}
+} 
+
 
 export default Home
 
@@ -264,14 +268,15 @@ const styles = StyleSheet.create({
   },
   productName: {
     maxWidth: 150,
+    marginTop: 10,
   },
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: 'white'
   },
   productImage: {
-    width: 150,
+    width: 180,
     height: 220,
-    borderRadius: 10,
+    resizeMode: 'cover',
   },
 });

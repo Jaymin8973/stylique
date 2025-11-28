@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from "react-native";
 import Toast from 'react-native-toast-message';
 import { NotificationProvider } from "./NotificationProvider";
 import "../global.css";
+import { StatusBar } from "expo-status-bar";
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
@@ -15,8 +16,7 @@ export default function RootLayout() {
       try {
         const onboarded = await AsyncStorage.getItem("hasOnboarded");
         const token = await AsyncStorage.getItem("userToken");
-        console.log(token);
-        console.log(onboarded);
+
         setHasOnboarded(onboarded === "true");
         setUserToken(token);
       } catch (e) {
@@ -38,6 +38,7 @@ export default function RootLayout() {
   return (
     <NotificationProvider>
       <Stack>
+        
         <Stack.Screen name="(Onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(Authentication)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

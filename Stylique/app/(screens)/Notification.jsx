@@ -14,8 +14,7 @@ const Notification = () => {
   }, []);
 
   return (
-    <ScrollView>
-      <SafeAreaView>
+    <ScrollView className="">
         <View className="gap-6 px-5 pb-4">
           <View className="flex-row justify-end items-center mb-4">
             {notifications.length > 0 && (
@@ -46,7 +45,6 @@ const Notification = () => {
             ))
           )}
         </View>
-      </SafeAreaView>
     </ScrollView>
   );
 };

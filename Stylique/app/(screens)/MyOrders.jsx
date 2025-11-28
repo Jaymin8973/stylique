@@ -86,6 +86,7 @@ export default function MyOrders() {
       }
       
       const res = await API.get(`/api/orders?${params.toString()}`);
+
       setOrders(res.data || []);
     } catch (e) {
       console.error(e);

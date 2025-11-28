@@ -17,8 +17,9 @@ const AlllProducts = () => {
     const [wishlistItems, setWishlistItems] = useState([]);
     const [ratings, setRatings] = useState({});
     const router = useRouter();
-
     const [userId, setUserId] = useState(null);
+
+
 
     const categories = ['All', "clothing","footwear","accessories","Sports"];
     const sortOptions = [
@@ -92,6 +93,7 @@ const AlllProducts = () => {
         try {
             if (!userId) return;
             const response = await API.get(`/wishlist/user/${userId}`);
+
             const wishlistProductIds = response.data.map(item => item.productId);
             setWishlistItems(wishlistProductIds);
         } catch (error) {
