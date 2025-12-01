@@ -6,6 +6,7 @@ import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, Text, TextInp
 import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
 import PasswordChangedPopup from "./PasswordChangedPopup";
+import IpAddress from '../../Config.json';
 const Password = () => {
    const params = useLocalSearchParams();
     const email = params.email;
@@ -16,6 +17,11 @@ const Password = () => {
     confirmPassword: yup.string().oneOf([yup.ref('newPassword'), null], 'Passwords must match')
   });
 
+
+  const API = axios.create({
+  baseURL: `http://${IpAddress.IpAddress}:5001`,
+});
+
   const formik = useFormik({
     initialValues: {
       newPassword: '',
@@ -24,8 +30,8 @@ const Password = () => {
     validationSchema: ValidationSchema,
     onSubmit: async values => {
        try {
-    const response = await axios.post(
-      'http://192.168.1.2:3000/users/forgotpassword',
+    const response = await API.patch(
+      'api/user/resetPassword',
       { newPassword: values.newPassword , email: email }
     );
     
@@ -36,6 +42,7 @@ const Password = () => {
     });
     setVisible(true);
   } catch (error) {
+    console.log(error.message)
     Toast.show({
       type: 'error',
       text1: 'Password Change Failed',

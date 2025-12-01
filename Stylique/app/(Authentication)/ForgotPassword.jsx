@@ -13,14 +13,14 @@ const ForgotPassword = () => {
     email: yup.string().email('Invalid email').required('Email is required'),
   });
 const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:3000`,
+  baseURL: `http://${IpAddress.IpAddress}:5001`,
 });
   const formik = useFormik({
     initialValues: { email: '' },
     validationSchema: ValidationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await API.post(`/users/otp`, values);
+        const response = await API.post(`api/user/sendOtp`, values);
         Toast.show({
           type: 'success',
           text1: 'Password Reset Email Sent',

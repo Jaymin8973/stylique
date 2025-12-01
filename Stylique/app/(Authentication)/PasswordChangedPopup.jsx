@@ -1,46 +1,70 @@
 import { useRouter } from 'expo-router';
-import { Image, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 
-const router = useRouter();
+const PasswordChangedPopup = ({ visible, onClose }) => {
+  const bottomSheetRef = useRef(null);
+  const snapPoints = useMemo(() => ['30%'], []);
 
-const PasswordChangedPopup = ({ visible , onClose}) => (
-  <Modal
-    visible={visible}
-    animationType="slide"
-    transparent={true}
-  >
-    <View style={{
-      flex: 1,
-      justifyContent: 'flex-end',
-      backgroundColor: 'rgba(0,0,0,0.2)',
-    }}>
-      <View style={{
-        backgroundColor: 'white',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 24,
-        alignItems: 'center',
-        height:250
-      }}>
+  const handleSheetChanges = useCallback((index) => {
+    console.log('Sheet index:', index);
+    
+    // If user drags down → index becomes -1 → close modal
+    if (index === -1) {
+      onClose();
+    }
+  }, [onClose]);
 
-        <Image source={require('../../assets/images/success.png')} style={{ width: 60, height: 60, marginBottom: 16 }} />
-        <Text style={{ fontWeight: 'bold', fontSize: 18 }}>Your password has been changed</Text>
-        <Text style={{ color: 'gray', marginVertical: 8 }}>Welcome back! Discover now!</Text>
-        <TouchableOpacity
-          onPress={onClose}
-          style={{
-            backgroundColor: 'black',
-            borderRadius: 24,
-            paddingVertical: 12,
-            paddingHorizontal: 32,
-            marginTop: 16
-          }}
+  return (
+    <Modal visible={visible} animationType="fade" transparent>
+      <GestureHandlerRootView style={styles.container}>
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          enablePanDownToClose={true}
+          onChange={handleSheetChanges}
         >
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>Browse home</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-);
+          <BottomSheetView style={styles.contentContainer}>
+            <Image source={require('../../assets/images/success.png')} style={styles.icon} />
+
+            <Text style={styles.title}>Your password has been changed</Text>
+            <Text style={styles.sub}>Welcome back! Discover now!</Text>
+
+            <TouchableOpacity onPress={onClose} style={styles.button}>
+              <Text style={styles.buttonText}>Browse home</Text>
+            </TouchableOpacity>
+          </BottomSheetView>
+        </BottomSheet>
+      </GestureHandlerRootView>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)', // better than ugly grey
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: { width: 60, height: 60, marginBottom: 16 },
+  title: { fontWeight: 'bold', fontSize: 18 },
+  sub: { color: 'gray', marginVertical: 8 },
+  button: {
+    backgroundColor: 'black',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    marginTop: 16
+  },
+  buttonText: { color: 'white', fontWeight: 'bold' }
+});
 
 export default PasswordChangedPopup;
