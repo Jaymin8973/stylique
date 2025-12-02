@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Button, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../../Api';
+
 
 const Cart = () => {
   const router = useRouter();
@@ -110,8 +111,14 @@ const Cart = () => {
   if (!items.length) {
     return (
       <View style={styles.center}>
-        <Ionicons name="cart-outline" size={40} color="#999" />
-        <Text style={{ marginTop: 8, color: '#666' }}>Your cart is empty</Text>
+        <Ionicons name="cart-outline" size={56} color="#ccc" />
+        <Text  className="mt-3 text-2xl font-bold ">Your cart is empty </Text>
+        <Text  className="mt-1 text-lg text-gray-700">Tap the cart icon to continue shopping</Text>
+
+        <TouchableOpacity className="bg-black mt-4 px-5 py-3 rounded-full" onPress={() => router.push('AlllProducts')}>
+          <Text className="text-white" >Start Shopping</Text>
+        </TouchableOpacity>
+
       </View>
     );
   }
@@ -148,7 +155,7 @@ const styles = StyleSheet.create({
   qtyBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f2f2f2', borderRadius: 8 },
   qtyBtn: { padding: 8 },
   qtyText: { paddingHorizontal: 12, fontSize: 14, fontWeight: '600' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' , backgroundColor:'white' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#eee', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   subLabel: { color: '#666', fontSize: 12 },
   subValue: { color: '#111', fontSize: 20, fontWeight: '800' },

@@ -1,15 +1,12 @@
 import { SimpleLineIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import BannerCarousel from '../../components/BannerCarousel';
-
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-
-import { SafeAreaView } from 'react-native-safe-area-context';
 import API from '../../Api';
-import data from '../../data.json';
+
+
 
 const Home = () => {
 
@@ -20,20 +17,17 @@ const Home = () => {
   const [sales, setSales] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef(null);
-
   const fetchedCategories = ["All", "clothing", "footwear", "accessories"]
 
 
   useEffect(() => {
-
-
     fetchCollections();
     fetchSales();
   }, []);
 
   useEffect(() => {
-  filterAndSortProducts();
-}, [Categories]);
+    filterAndSortProducts();
+  }, [Categories]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -45,6 +39,7 @@ const Home = () => {
   };
 
   const filterAndSortProducts = async () => {
+
     const response = await API.get('api/products/all');
     let filtered = response.data || [];
 
@@ -55,15 +50,15 @@ const Home = () => {
       filtered = filtered.slice(0, 10);
     }
     else if (filtered.length > 0) {
-       filtered = filtered.slice(0, 10);
+      filtered = filtered.slice(0, 10);
     }
 
     setFeaturedProducts(filtered);
+
   };
 
 
   const fetchCollections = async () => {
-
     try {
       const response = await API.get('/api/collections/public');
       setCollections(response.data || []);
@@ -81,76 +76,78 @@ const Home = () => {
     }
   };
 
-
-
-
   const collectionBanners = (collections || [])
     .filter((c) => c.imageUrl)
     .map((c) => ({ id: String(c.id), image: c.imageUrl }));
+
+
+
 
   return (
     <ScrollView horizontal={false} contentContainerStyle={styles.container} refreshControl={
       <RefreshControl
         refreshing={refreshing}
         onRefresh={onRefresh}
+        colors={["black"]}     
+        tintColor="black"      
       />
-    }>
-  <View className="flex-row my-5 w-screen justify-around">
-  {fetchedCategories.map((category, index) => (
-    <Pressable key={index} onPress={() => setCategories(category)}>
-      
-  
-      <View
-        style={{
-          height: 65,                
-          width: 65,                 
-          borderRadius: 32.5,          
-          borderWidth: Categories === category ? 1 : 0,
-          borderColor: "#3A2C27",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-      
-        <View
-          style={{
-            height: 55,
-            width: 55,
-            borderRadius: 27.5,        
-            backgroundColor:
-              Categories === category ? "#3A2C27" : "#F3F3F3",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <SimpleLineIcons
-            name={icons[index] ? icons[index].trim() : "question"}
-            size={24}
-            color={Categories === category ? "white" : "gray"}
-          />
-        </View>
+    }  style={{ backgroundColor: "white" }} >
+      <View className="flex-row my-5 w-screen justify-around" >
+        {fetchedCategories.map((category, index) => (
+          <Pressable key={index} onPress={() => setCategories(category)}>
 
+
+            <View
+              style={{
+                height: 65,
+                width: 65,
+                borderRadius: 32.5,
+                borderWidth: Categories === category ? 1 : 0,
+                borderColor: "#3A2C27",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+
+              <View
+                style={{
+                  height: 55,
+                  width: 55,
+                  borderRadius: 27.5,
+                  backgroundColor:
+                    Categories === category ? "#3A2C27" : "#F3F3F3",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <SimpleLineIcons
+                  name={icons[index] ? icons[index].trim() : "question"}
+                  size={24}
+                  color={Categories === category ? "white" : "gray"}
+                />
+              </View>
+
+            </View>
+
+            <Text className="text-center text-sm mt-1">{category}</Text>
+
+          </Pressable>
+        ))}
       </View>
 
-      <Text className="text-center mt-2">{category}</Text>
-
-    </Pressable>
-  ))}
-</View>
 
 
-
-  <BannerCarousel
-    banners={collectionBanners}
-    onPressCta={(item) =>
-      router.push({
-        pathname: "/(screens)/CollectionDetail",
-        params: { id: item.id },
-      })
-    }
-  />
+      <BannerCarousel
+        banners={collectionBanners}
+        onPressCta={(item) =>
+          router.push({
+            pathname: "/(screens)/CollectionDetail",
+            params: { id: item.id },
+          })
+        }
+      />
       <View className="flex-row  items-center px-5 mt-8 justify-between">
-        <Text className="text-3xl font-bold">Recently Added</Text>
+        <Text className="text-xl font-bold">Recently Added</Text>
         <Pressable onPress={() => router.push('/AlllProducts')}>
           <Text className="text-xl text-gray-500">Show all</Text>
         </Pressable>
@@ -186,20 +183,21 @@ const Home = () => {
                   style={styles.productImage}
                 />
                 <View className="p-3">
-                <Text
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  style={styles.productName}
-                >
-                  {item.productName || item.name}
-                </Text>
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={styles.productName}
+                    className="text-sm text-gray-700"
+                  >
+                    {item.productName || item.name}
+                  </Text>
 
-                <Text>
-                  ₹
-                  {item.sellingPrice != null
-                    ? item.sellingPrice
-                    : item.price}
-                </Text>
+                  <Text>
+                    ₹
+                    {item.sellingPrice != null
+                      ? item.sellingPrice
+                      : item.price}
+                  </Text>
                 </View>
               </View>
             </Pressable>
@@ -213,7 +211,7 @@ const Home = () => {
           return (
             <>
               <View className="flex-row items-center px-5 mt-6 justify-between">
-                <Text className="text-3xl font-bold">Sale</Text>
+                <Text className="text-xl font-bold">Sale</Text>
                 <Pressable
                   onPress={() =>
                     router.push({
@@ -257,7 +255,7 @@ const Home = () => {
     </ScrollView>
 
   )
-} 
+}
 
 
 export default Home

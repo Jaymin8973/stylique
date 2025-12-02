@@ -88,8 +88,8 @@ const Profile = () => {
                 </Text>
               </View>
               <View className="">
-                <Text style={styles.username}>{name}</Text>
-                <Text className="text-xl">{email}</Text>
+                <Text style={styles.username} >{name}</Text>
+                <Text className="text-xl" ellipsizeMode='tail'>{email}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => (router.push("EditProfile"))}

@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList, Pressable, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, FlatList, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import * as SecureStore from 'expo-secure-store';
 import API from '../../Api';
@@ -100,6 +100,16 @@ const Wishlist = () => {
 
   const FirstRoute = () => (
     <View className="flex-1 bg-white p-4">
+        {wishlistItems.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <Ionicons name="heart-outline" size={56} color="#ccc" />
+          <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
+          <Text style={styles.emptySub}>Tap the heart icon to save items for later</Text>
+          <TouchableOpacity style={styles.shopBtn} onPress={() => router.push('AlllProducts')}>
+            <Text style={styles.shopText}>Start Shopping</Text>
+          </TouchableOpacity>
+        </View>
+      ) :(
       <FlatList
         data={wishlistItems}
         keyExtractor={(it) => String(it.id)}
@@ -109,6 +119,7 @@ const Wishlist = () => {
         contentContainerStyle={styles.grid}
         showsVerticalScrollIndicator={false}
       />
+      )}
     </View>
   );
 
@@ -234,7 +245,7 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center' },
   ratingCount: { fontSize: 12, color: '#6b7280' },
 
-  emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyTitle: { fontSize: 22, fontWeight: '700', marginTop: 12, color: '#333' },
   emptySub: { fontSize: 16, color: '#666', textAlign: 'center', marginTop: 6 },
   shopBtn: { backgroundColor: '#000', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 24, marginTop: 20 },
