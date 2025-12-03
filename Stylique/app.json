@@ -4,7 +4,7 @@
     "slug": "stylique",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/Stylique_Text_Logo.png",
+    "icon": "./assets/images/Stylique_Logo.png",
     "scheme": "styliquedemo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

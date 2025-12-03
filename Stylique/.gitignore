@@ -92,4 +92,7 @@ ios/DerivedData/
 tmp/
 temp/
 
+.expo/
+.expo-shared/
+
 # @end expo-cli
