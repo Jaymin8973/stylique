@@ -38,7 +38,6 @@ export default function RootLayout() {
   return (
     <NotificationProvider>
       <Stack>
-        
         <Stack.Screen name="(Onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(Authentication)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

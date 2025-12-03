@@ -1,10 +1,11 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Pressable,  ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { THEME } from '../../constants/Theme';
 import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
 import API from '../../Api';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Address = () => {
     const [selectedId, setSelectedId] = useState(null);

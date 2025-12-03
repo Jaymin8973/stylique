@@ -1,7 +1,8 @@
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Modal, Platform,  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import StarRating from 'react-native-star-rating-widget';
 
 

@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform,  ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 import IpAddress from '../../Config.json';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Verification = () => {
   const [otp, setOtp] = useState(['', '', '', '']);

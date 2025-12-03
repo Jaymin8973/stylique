@@ -41,6 +41,7 @@ const Search = () => {
     }, [])
   );
 
+
   return (
     <>
       <StatusBar style="dark" />

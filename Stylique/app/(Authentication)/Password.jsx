@@ -2,11 +2,12 @@ import axios from 'axios';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFormik } from 'formik';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform,  ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
 import PasswordChangedPopup from "./PasswordChangedPopup";
 import IpAddress from '../../Config.json';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const Password = () => {
    const params = useLocalSearchParams();
     const email = params.email;

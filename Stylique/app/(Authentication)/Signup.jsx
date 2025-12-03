@@ -2,13 +2,14 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFormik } from 'formik';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable,  ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
 import * as Yup from 'yup';
 import API from '../../Api';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Signup = () => {
   const router = useRouter();
