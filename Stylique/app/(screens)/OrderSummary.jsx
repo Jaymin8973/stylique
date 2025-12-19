@@ -126,6 +126,17 @@ const OrderSummary = () => {
             </View>
           </View>
 
+          {/* View Invoice Button */}
+          <View className="mb-6">
+            <ThemedButton
+              title="View Invoice"
+              variant="secondary"
+              onPress={() => router.push({ pathname: 'Invoice', params: { id: String(order.id) } })}
+              icon="document-text-outline"
+              className="border"
+            />
+          </View>
+
           <View className="flex-row items-center justify-between">
             <View className="flex-1 mr-3">
               <ThemedButton title="Return home" variant="secondary" onPress={() => router.replace('(tabs)')} className='border' />

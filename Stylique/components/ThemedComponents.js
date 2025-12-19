@@ -5,7 +5,7 @@ import { THEME, getSearchBarStyle, getCategoryFilterStyle, getProductCardStyle }
 
 // Themed Container
 export const ThemedContainer = ({ children, style = {}, className = '' }) => (
-  <View 
+  <View
     className={`flex-1  ${className}`}
     style={style}
   >
@@ -21,12 +21,12 @@ export const ThemedSection = ({ children, padding = true, className = '' }) => (
 );
 
 // Themed Search Bar
-export const ThemedSearchBar = ({ 
-  value, 
-  onChangeText, 
-  placeholder = 'Search...', 
+export const ThemedSearchBar = ({
+  value,
+  onChangeText,
+  placeholder = 'Search...',
   onClear,
-  className = '' 
+  className = ''
 }) => (
   <View className={`${getSearchBarStyle().className} ${className}`}>
     <Ionicons name="search" size={20} color="#666" />
@@ -46,18 +46,18 @@ export const ThemedSearchBar = ({
 );
 
 // Themed Category Filter
-export const ThemedCategoryFilter = ({ 
-  categories, 
-  selectedCategory, 
+export const ThemedCategoryFilter = ({
+  categories,
+  selectedCategory,
   onSelectCategory,
-  className = '' 
+  className = ''
 }) => (
   <ScrollView horizontal showsHorizontalScrollIndicator={false} className={className}>
     <View className="flex-row gap-3">
       {categories.map((category) => {
         const isActive = selectedCategory === category;
         const style = getCategoryFilterStyle(isActive);
-        
+
         return (
           <Pressable
             key={category}
@@ -75,23 +75,23 @@ export const ThemedCategoryFilter = ({
 );
 
 // Themed Product Card
-export const ThemedProductCard = ({ 
-  product, 
-  onPress, 
+export const ThemedProductCard = ({
+  product,
+  onPress,
   style = {},
-  className = '' 
+  className = ''
 }) => {
   const cardStyle = getProductCardStyle({ style });
-  
+
   return (
     <Pressable onPress={onPress} className={`mb-4 ${className}`}>
       <View {...cardStyle}>
         <View className="relative">
-          <Image 
-            source={{ 
-              uri: product?.imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400' 
-            }} 
-            style={styles.productImage} 
+          <Image
+            source={{
+              uri: product?.imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400'
+            }}
+            style={styles.productImage}
           />
           {(product?.stockQuantity > 0) && (
             <View className="absolute top-2 right-2 bg-green-500 px-2 py-1 rounded-full">
@@ -139,38 +139,42 @@ export const ThemedHeader = ({ title, onBack, className = '' }) => (
 );
 
 // Themed Button
-export const ThemedButton = ({ 
-  title, 
-  onPress, 
-  variant = 'primary', 
+export const ThemedButton = ({
+  title,
+  onPress,
+  variant = 'primary',
   icon,
-  className = '' 
+  disabled,
+  className = ''
 }) => {
-  const buttonStyle = variant === 'primary' 
-    ? THEME.components.button.primary 
+  const buttonStyle = variant === 'primary'
+    ? THEME.components.button.primary
     : THEME.components.button.secondary;
-    
+
+  const iconColor = variant === 'primary' ? '#FFFFFF' : '#374151'; // white for primary, gray-700 for secondary
+
   return (
-    <Pressable 
+    <Pressable
       onPress={onPress}
+      disabled={disabled}
       className={`${buttonStyle.background} ${buttonStyle.textColor} px-6 py-3 rounded-xl font-medium flex-row items-center justify-center ${className}`}
     >
-      {icon && <Ionicons name={icon} size={20} className="mr-2" />}
-      <Text  className={`${buttonStyle.textColor}`}>{title}</Text>
+      {icon && <Ionicons name={icon} size={20} color={iconColor} style={{ marginRight: 8 }} />}
+      <Text className={`${buttonStyle.textColor}`}>{title}</Text>
     </Pressable>
   );
 };
 
 // Themed Badge
-export const ThemedBadge = ({ 
-  title, 
-  variant = 'success', 
-  className = '' 
+export const ThemedBadge = ({
+  title,
+  variant = 'success',
+  className = ''
 }) => {
-  const badgeStyle = variant === 'success' 
-    ? THEME.components.badge.success 
+  const badgeStyle = variant === 'success'
+    ? THEME.components.badge.success
     : THEME.components.badge.warning;
-    
+
   return (
     <View className={`${badgeStyle.background} px-3 py-1 rounded-full ${className}`}>
       <Text className={`${badgeStyle.textColor} text-xs font-medium`}>
@@ -184,7 +188,7 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     height: 180,
-    resizeMode: 'cover',
+    contentFit: 'cover',
   },
 });
 

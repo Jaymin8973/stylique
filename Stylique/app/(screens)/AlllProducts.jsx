@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import API from '../../Api';
@@ -18,29 +18,38 @@ const AlllProducts = () => {
     const [ratings, setRatings] = useState({});
     const router = useRouter();
     const [userId, setUserId] = useState(null);
+    const categories = ['All', "clothing", "footwear", "accessories", "Sports"];
+    const params = useLocalSearchParams()
+    const subcategory = params.subcategory
 
-
-
-    const categories = ['All', "clothing","footwear","accessories","Sports"];
-    const sortOptions = [
-        { key: 'name', label: 'Name' },
-        { key: 'price-low', label: 'Price: Low to High' },
-        { key: 'price-high', label: 'Price: High to Low' }
-    ];
 
     useEffect(() => {
-        fetchProducts();
+        if (subcategory) {
+
+            fetchsubCatProducts();
+        } else {
+
+            fetchProducts();
+        }
+    }, [subcategory]);
+
+
+    useEffect(() => {
         const loadUserId = async () => {
-          try {
-            const id = await SecureStore.getItemAsync('userId');
-            if (id) setUserId(Number(id));
-          } catch {}
+            try {
+                const id = await SecureStore.getItemAsync('userId');
+                if (id) setUserId(Number(id));
+            } catch (e) {
+                console.log(e);
+            }
         };
         loadUserId();
     }, []);
 
+
+
     useEffect(() => {
-      if (userId) fetchUserWishlist();
+        if (userId) fetchUserWishlist();
     }, [userId]);
 
     useEffect(() => {
@@ -50,8 +59,8 @@ const AlllProducts = () => {
     useEffect(() => {
         if (!filteredData || !filteredData.length) return;
         const ids = filteredData
-          .map((item) => item?.productId || item?.id)
-          .filter(Boolean);
+            .map((item) => item?.productId || item?.id)
+            .filter(Boolean);
         ids.forEach((pid) => {
             if (!ratings[pid]) {
                 fetchRatingForProduct(pid);
@@ -72,6 +81,21 @@ const AlllProducts = () => {
             setLoading(false);
         }
     };
+
+    const fetchsubCatProducts = async () => {
+        try {
+            setData('')
+            setLoading(true);
+            const response = await API.post('api/products/subcat', { subcategory });
+            setData(response.data);
+            // setFilteredData(response.data);
+        } catch (error) {
+            console.error('Error fetching products:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const fetchRatingForProduct = async (productId) => {
         try {
@@ -105,7 +129,7 @@ const AlllProducts = () => {
         try {
             if (!userId) return;
             const isInWishlist = wishlistItems.includes(productId);
-            
+
             if (isInWishlist) {
                 // Remove from wishlist
                 await API.post('/wishlist/remove', { user_id: userId, productId });
@@ -122,22 +146,22 @@ const AlllProducts = () => {
 
     const filterAndSortProducts = () => {
         let filtered = [...data];
-        
+
         // Filter by search text
         if (searchText) {
-            filtered = filtered.filter(item => 
+            filtered = filtered.filter(item =>
                 item.productName.toLowerCase().includes(searchText.toLowerCase())
             );
         }
-        
+
         // Filter by category
         if (selectedCategory !== 'All') {
-            
-            filtered = filtered.filter(item => 
+
+            filtered = filtered.filter(item =>
                 item.category.toLowerCase() === selectedCategory.toLowerCase()
             );
         }
-        
+
         // Sort products
         switch (sortBy) {
             case 'name':
@@ -150,7 +174,7 @@ const AlllProducts = () => {
                 filtered.sort((a, b) => b.price - a.price);
                 break;
         }
-        
+
         setFilteredData(filtered);
     };
 
@@ -196,18 +220,16 @@ const AlllProducts = () => {
                                 <Pressable
                                     key={category}
                                     onPress={() => setSelectedCategory(category)}
-                                    className={`px-5 py-2 rounded-full ${
-                                        selectedCategory === category
-                                            ? 'bg-[#343434]'
-                                            : 'bg-gray-100'
-                                    }`}
+                                    className={`px-5 py-2 rounded-full ${selectedCategory === category
+                                        ? 'bg-[#343434]'
+                                        : 'bg-gray-100'
+                                        }`}
                                 >
                                     <Text
-                                        className={`font-medium ${
-                                            selectedCategory === category
-                                                ? 'text-white'
-                                                : 'text-gray-700'
-                                        }`}
+                                        className={`font-medium ${selectedCategory === category
+                                            ? 'text-white'
+                                            : 'text-gray-700'
+                                            }`}
                                     >
                                         {category}
                                     </Text>
@@ -233,10 +255,10 @@ const AlllProducts = () => {
                     <FlatList
                         data={filteredData}
                         showsVerticalScrollIndicator={false}
-                        keyExtractor={(item, index) => 
+                        keyExtractor={(item, index) =>
                             item?.productId?.toString() || item?.id?.toString() || index.toString()
                         }
-                        
+
                         numColumns={2}
                         columnWrapperStyle={{ justifyContent: 'space-between' }}
                         contentContainerStyle={{ paddingBottom: 20 }}
@@ -256,11 +278,11 @@ const AlllProducts = () => {
                                 >
                                     <View className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                                         <View className="relative">
-                                            <Image 
-                                                source={{ 
-                                                    uri: item.imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400' 
-                                                }} 
-                                                style={styles.productImage} 
+                                            <Image
+                                                source={{
+                                                    uri: item.imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400'
+                                                }}
+                                                style={styles.productImage}
                                             />
                                             <Pressable
                                                 onPress={() => toggleWishlist(item?.productId || item?.id)}
@@ -275,7 +297,7 @@ const AlllProducts = () => {
                                             {(item?.totalStock > 0) && (
                                                 <View className="absolute top-2 right-2 bg-[#343434] px-2 py-1 rounded-full">
                                                     <Text className="text-white text-xs font-medium">
-                                                       {item?.totalStock > 10 ? 'In Stock' : 'Limited'}
+                                                        {item?.totalStock > 10 ? 'In Stock' : 'Limited'}
                                                     </Text>
                                                 </View>
                                             )}
@@ -321,7 +343,7 @@ const styles = StyleSheet.create({
     productImage: {
         width: '100%',
         height: 200,
-        resizeMode: 'cover',
+        contentFit: 'cover',
     },
 });
 

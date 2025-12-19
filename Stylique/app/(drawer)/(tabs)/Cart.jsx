@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API from '../../Api';
+import API from '../../../Api';
 
 
 const Cart = () => {
@@ -112,8 +112,8 @@ const Cart = () => {
     return (
       <View style={styles.center}>
         <Ionicons name="cart-outline" size={56} color="#ccc" />
-        <Text  className="mt-3 text-2xl font-bold ">Your cart is empty </Text>
-        <Text  className="mt-1 text-lg text-gray-700">Tap the cart icon to continue shopping</Text>
+        <Text className="mt-3 text-2xl font-bold ">Your cart is empty </Text>
+        <Text className="mt-1 text-lg text-gray-700">Tap the cart icon to continue shopping</Text>
 
         <TouchableOpacity className="bg-black mt-4 px-5 py-3 rounded-full" onPress={() => router.push('AlllProducts')}>
           <Text className="text-white" >Start Shopping</Text>

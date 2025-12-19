@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   image: {
     width: 400,
     height: 600,
-    resizeMode: "cover",
+    contentFit: "cover",
     top: 140,
   },
   pagination: {

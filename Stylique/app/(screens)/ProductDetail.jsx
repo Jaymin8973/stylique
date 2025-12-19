@@ -214,8 +214,7 @@ export default function ProductDetail() {
               images={product?.images || []}
               primaryImage={product?.imageUrl}
               onImagePress={(image) => {
-                // Handle image press for full screen view
-                console.log('Image pressed:', image.imageUrl);
+
               }}
             />
             

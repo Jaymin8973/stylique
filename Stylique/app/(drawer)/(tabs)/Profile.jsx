@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import API from '../../Api';
+import API from '../../../Api';
 import { Image } from 'expo-image';
 
 const Profile = () => {
@@ -99,7 +99,7 @@ const Profile = () => {
             </View>
           ) : (
             <View className=" flex-row items-center justify-between mt-6 ">
-              <Image source={require('../../assets/images/Stylique_Logo.png')} style={{ width: 100, height: 100,  borderRadius:50  }} />
+              <Image source={require('../../../assets/images/Stylique_Logo.png')} style={{ width: 100, height: 100, borderRadius: 50 }} />
               <TouchableOpacity onPress={() => router.push('/(Authentication)/Login')}>
                 <View className="border border-gray-300 px-6 py-3 rounded-md">
                   <Text className="text-[#343434] text-lg font-semibold">Login / Signup</Text>

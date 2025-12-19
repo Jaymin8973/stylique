@@ -124,7 +124,7 @@ export default function TrackOrder() {
             <Text className="text-gray-900 font-semibold mb-1">Don't forget to rate</Text>
             <Text className="text-gray-500 text-xs mb-3">Rate product to get 5 points for collect.</Text>
             <View className="flex-row mt-1">
-              {[0,1,2,3,4].map((i) => (
+              {[0, 1, 2, 3, 4].map((i) => (
                 <Ionicons key={i} name="star-outline" size={20} color={THEME.colors.rating || '#f5a623'} style={{ marginRight: 6 }} />
               ))}
             </View>

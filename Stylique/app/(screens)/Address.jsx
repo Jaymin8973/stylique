@@ -1,7 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable,  ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { THEME } from '../../constants/Theme';
 import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
 import API from '../../Api';
@@ -75,8 +75,8 @@ const Address = () => {
                     <ThemedSection className="pt-4 pb-6">
                         <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-2xl font-bold text-gray-900">Delivery Address</Text>
-                            <ThemedButton 
-                                title="Add New" 
+                            <ThemedButton
+                                title="Add New"
                                 onPress={() => router.push('AddressForm')}
                                 variant="secondary"
                                 icon="add"
@@ -94,7 +94,7 @@ const Address = () => {
                                 <Text className="mt-4 text-gray-500 text-center">
                                     No addresses found. Add your first address to get started.
                                 </Text>
-                               
+
                             </View>
                         ) : (
                             <View className="gap-4">
@@ -102,19 +102,18 @@ const Address = () => {
                                     <Pressable
                                         key={address.id}
                                         onPress={() => SelectHandle(address.id)}
-                                        className={`bg-white rounded-2xl border-2 p-4 ${
-                                            selectedId === address.id
+                                        className={`bg-white rounded-2xl border-2 p-4 ${selectedId === address.id
                                                 ? 'border-black'
                                                 : 'border-gray-100'
-                                        }`}
+                                            }`}
                                     >
                                         <View className="flex-row justify-between items-start">
                                             <View className="flex-1">
                                                 <View className="flex-row items-center mb-2">
-                                                    <FontAwesome5 
-                                                        name="map-marker-alt" 
-                                                        size={16} 
-                                                        color={THEME.colors.primary} 
+                                                    <FontAwesome5
+                                                        name="map-marker-alt"
+                                                        size={16}
+                                                        color={THEME.colors.primary}
                                                     />
                                                     <Text className="ml-2 font-semibold text-gray-900">
                                                         Delivery Address

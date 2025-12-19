@@ -61,7 +61,7 @@ const Wishlist = () => {
 
   const goProduct = (id) => router.push(`ProductDetail?id=${id}`);
 
-  console.log(wishlistItems)
+
 
   const renderAllCard = ({ item }) => (
 
@@ -100,7 +100,7 @@ const Wishlist = () => {
 
   const FirstRoute = () => (
     <View className="flex-1 bg-white p-4">
-        {wishlistItems.length === 0 ? (
+      {wishlistItems.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Ionicons name="heart-outline" size={56} color="#ccc" />
           <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
@@ -109,16 +109,16 @@ const Wishlist = () => {
             <Text style={styles.shopText}>Start Shopping</Text>
           </TouchableOpacity>
         </View>
-      ) :(
-      <FlatList
-        data={wishlistItems}
-        keyExtractor={(it) => String(it.id)}
-        renderItem={renderAllCard}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
-        contentContainerStyle={styles.grid}
-        showsVerticalScrollIndicator={false}
-      />
+      ) : (
+        <FlatList
+          data={wishlistItems}
+          keyExtractor={(it) => String(it.id)}
+          renderItem={renderAllCard}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          contentContainerStyle={styles.grid}
+          showsVerticalScrollIndicator={false}
+        />
       )}
     </View>
   );
@@ -163,11 +163,11 @@ const Wishlist = () => {
         </View>
 
       </View>
-        <Pressable className="flex-row items-end justify-between mt-4 ">
+      <Pressable className="flex-row items-end justify-between mt-4 ">
         <Text className="text-3xl font-semibold mt-4 ">Going out outfits</Text>
         <Ionicons name="chevron-forward" size={20} color="#343434" />
-        </Pressable>
-        <Text className="text-gray-400 mt-2">12 Items</Text>
+      </Pressable>
+      <Text className="text-gray-400 mt-2">12 Items</Text>
     </View>
   );
 
@@ -191,16 +191,16 @@ const Wishlist = () => {
       renderScene={renderScene}
       renderTabBar={(props) => (
         <View className=" bg-white">
-        <TabBar
-          {...props}
-          style={styles.tabBar}
-          indicatorStyle={styles.indicator}
-          activeColor='white'
-          inactiveColor='black'
-        />
+          <TabBar
+            {...props}
+            style={styles.tabBar}
+            indicatorStyle={styles.indicator}
+            activeColor='white'
+            inactiveColor='black'
+          />
         </View>
       )}
-      onIndexChange={setIndex}     
+      onIndexChange={setIndex}
     />
   )
 }

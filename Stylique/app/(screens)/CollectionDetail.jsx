@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   heroImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    contentFit: 'cover',
   },
   heroSafeArea: {
     position: 'absolute',
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     height: 200,
-    resizeMode: 'cover',
+    contentFit: 'cover',
   },
 });
 

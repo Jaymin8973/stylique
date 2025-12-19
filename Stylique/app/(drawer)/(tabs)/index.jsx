@@ -1,10 +1,10 @@
 import { SimpleLineIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import BannerCarousel from '../../components/BannerCarousel';
+import BannerCarousel from '../../../components/BannerCarousel';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import API from '../../Api';
+import API from '../../../Api';
 
 
 
@@ -45,16 +45,14 @@ const Home = () => {
 
     if (Categories !== 'All') {
       filtered = filtered.filter(item =>
-        item.category.toLowerCase() === Categories.toLowerCase()
+        item.productType.toLowerCase() === Categories.toLowerCase()
       );
       filtered = filtered.slice(0, 10);
     }
     else if (filtered.length > 0) {
       filtered = filtered.slice(0, 10);
     }
-
     setFeaturedProducts(filtered);
-
   };
 
 
@@ -88,10 +86,10 @@ const Home = () => {
       <RefreshControl
         refreshing={refreshing}
         onRefresh={onRefresh}
-        colors={["black"]}     
-        tintColor="black"      
+        colors={["black"]}
+        tintColor="black"
       />
-    }  style={{ backgroundColor: "white" }} >
+    } style={{ backgroundColor: "white" }} >
       <View className="flex-row my-5 w-screen justify-around" >
         {fetchedCategories.map((category, index) => (
           <Pressable key={index} onPress={() => setCategories(category)}>
@@ -275,6 +273,6 @@ const styles = StyleSheet.create({
   productImage: {
     width: 180,
     height: 220,
-    resizeMode: 'cover',
+    contentFit: 'cover',
   },
 });

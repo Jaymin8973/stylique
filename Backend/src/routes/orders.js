@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import authAny from '../middleware/authAny.js';
+import { generateInvoicePDF, formatInvoiceData } from '../utils/invoice-generator.js';
 
 const router = Router();
 
@@ -254,6 +255,61 @@ router.post('/:id/tracking', async (req, res) => {
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Failed to add tracking event' });
+  }
+});
+
+// Get invoice data as JSON
+router.get('/:id/invoice', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+
+    const order = await prisma.orders.findFirst({
+      where: { id, userId },
+      include: {
+        items: true,
+        user: true,
+      },
+    });
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const invoiceData = formatInvoiceData(order);
+    return res.json(invoiceData);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to generate invoice data' });
+  }
+});
+
+// Generate and download invoice PDF
+router.get('/:id/invoice/pdf', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+
+    const order = await prisma.orders.findFirst({
+      where: { id, userId },
+      include: {
+        items: true,
+        user: true,
+      },
+    });
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const pdfBuffer = await generateInvoicePDF(order);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${order.orderNumber || order.id}.pdf`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    return res.send(pdfBuffer);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to generate invoice PDF' });
   }
 });
 

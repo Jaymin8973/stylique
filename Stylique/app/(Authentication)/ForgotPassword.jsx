@@ -2,7 +2,7 @@ import { Fontisto } from '@expo/vector-icons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useFormik } from 'formik';
-import { KeyboardAvoidingView, Platform,  ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
 import IpAddress from '../../Config.json';
@@ -13,9 +13,9 @@ const ForgotPassword = () => {
   const ValidationSchema = yup.object().shape({
     email: yup.string().email('Invalid email').required('Email is required'),
   });
-const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:5001`,
-});
+  const API = axios.create({
+    baseURL: `http://${IpAddress.IpAddress}:5001`,
+  });
   const formik = useFormik({
     initialValues: { email: '' },
     validationSchema: ValidationSchema,

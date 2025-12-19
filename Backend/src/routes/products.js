@@ -48,6 +48,35 @@ router.get('/all', async (req, res) => {
   }
 });
 
+router.get('/categoryCounts', async (req, res) => {
+  try {
+
+    const productTypes = ['clothing', 'footwear', 'accessories'];
+
+    const results = {};
+
+    for (const type of productTypes) {
+      const data = await prisma.product.groupBy({
+        by: ['subcategory'],
+        where: { productType: type },
+        _count: { subcategory: true }
+      });
+
+      results[type] = data.map(r => ({
+        subCategory: r.subcategory,
+        count: r._count.subcategory
+      }));
+    }
+
+    res.json(results);
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch category counts' });
+  }
+});
+
+
 // Get one product by id
 router.get('/:id', async (req, res) =>{ 
   try {
@@ -358,5 +387,30 @@ router.delete('/:id',auth, async (req, res) => {
     res.status(400).json({ error: 'Failed to delete product' });
   }
 });
+
+
+router.post('/subcat', async (req, res) =>{ 
+  try {
+    const {subcategory} = req.body;
+    const product = await prisma.product.findMany({
+      where: { subcategory:subcategory },
+      include: {
+        productimage: true,
+        variant: true,
+        clothingdetail: true,
+        footweardetail: true,
+        accessorydetail: true,
+      },
+    });
+    console.log(product)
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+
 
 export default router;

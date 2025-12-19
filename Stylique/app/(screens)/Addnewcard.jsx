@@ -300,7 +300,7 @@ const Addnewcard = () => {
                                     >
                                         <Image
                                             source={{ uri: cardLogos['Visa'] }}
-                                            style={{ width: 80, height: 50, resizeMode: 'contain', position: 'absolute', top: 10, right: 10 }}
+                                            style={{ width: 80, height: 50, contentFit: 'contain', position: 'absolute', top: 10, right: 10 }}
                                         />
                                         <View className="h-60 justify-center rounded-2xl bg-[#09A3C5] -z-10 ">
                                             <View className="flex-grow  items-center justify-end h-1/4">

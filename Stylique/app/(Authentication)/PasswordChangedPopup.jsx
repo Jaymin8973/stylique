@@ -9,7 +9,6 @@ const PasswordChangedPopup = ({ visible, onClose }) => {
   const snapPoints = useMemo(() => ['30%'], []);
 
   const handleSheetChanges = useCallback((index) => {
-    console.log('Sheet index:', index);
     
     // If user drags down → index becomes -1 → close modal
     if (index === -1) {

@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   mainImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    contentFit: 'cover',
   },
   indicators: {
     flexDirection: 'row',
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 6,
-    resizeMode: 'cover',
+    contentFit: 'cover',
   },
   primaryBadge: {
     position: 'absolute',

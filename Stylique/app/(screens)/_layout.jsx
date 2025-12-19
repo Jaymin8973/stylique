@@ -187,7 +187,7 @@ const _layout = () => {
         ),
       })} />
 
-      <Stack.Screen name='CollectionDetail' options={({ navigation , route }) => ({
+      <Stack.Screen name='CollectionDetail' options={({ navigation, route }) => ({
         headerLeft: () => (
           <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
             <AntDesign name="left" size={20} color="black" />
@@ -205,12 +205,67 @@ const _layout = () => {
       })} />
 
 
-      <Stack.Screen name='SaleDetail'options={({ navigation , route }) => ({
+      <Stack.Screen name='SaleDetail' options={({ navigation, route }) => ({
         headerShown: false
       })} />
 
+      <Stack.Screen name='OrderSummary' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Order Summary</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'transparent' }} />
+        ),
+      })} />
 
+      <Stack.Screen name='Invoice' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Invoice</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
+        ),
+      })} />
 
+      <Stack.Screen name='TrackOrder' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Track Order</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'transparent' }} />
+        ),
+      })} />
+
+      <Stack.Screen name='RateProduct' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Rate Product</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'transparent' }} />
+        ),
+      })} />
+
+      <Stack.Screen name='Test' options={{ headerShown: false }} />
 
     </Stack>
 

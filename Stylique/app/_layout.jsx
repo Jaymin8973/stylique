@@ -6,6 +6,7 @@ import Toast from 'react-native-toast-message';
 import { NotificationProvider } from "./NotificationProvider";
 import "../global.css";
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
@@ -37,13 +38,16 @@ export default function RootLayout() {
   }
   return (
     <NotificationProvider>
-      <Stack>
-        <Stack.Screen name="(Onboarding)" options={{ headerShown: false }} />
-        <Stack.Screen name="(Authentication)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(screens)" options={{ headerShown: false }} />
-      </Stack>
-      <Toast position="top" autoHide={true} visibilityTime={2500} topOffset={50} />
+      <SafeAreaProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(Onboarding)" />
+          <Stack.Screen name="(Authentication)" />
+          <Stack.Screen name="(drawer)" />
+          <Stack.Screen name="(screens)" />
+        </Stack>
+        <Toast position="top" autoHide={true} visibilityTime={2500} topOffset={50} />
+      </SafeAreaProvider>
+      <StatusBar style="auto" />
     </NotificationProvider>
   );
 }

@@ -130,17 +130,27 @@ const ProductUpload: React.FC = () => {
       'innerwear': ['Bras', 'Panties', 'Camisoles', 'Shapewear', 'Nightwear'],
       'activewear': ['Sports Bras', 'Yoga Pants', 'Track Suits', 'Gym Wear'],
       'winterwear': ['Jackets', 'Coats', 'Sweaters', 'Cardigans', 'Shawls']
+    },
+    unisex: {
+      'topwear': ['T-Shirts', 'Tops', 'Shirts', 'Blouses', 'Crop Tops', 'Tank Tops', 'Tunics'],
+      'bottomwear': ['Jeans', 'Trousers', 'Shorts', 'Skirts', 'Palazzos', 'Leggings'],
+      'dresses': ['Casual Dresses', 'Party Dresses', 'Maxi Dresses', 'Mini Dresses', 'Midi Dresses'],
+      'ethnicwear': ['Sarees', 'Kurtas & Kurtis', 'Lehenga Choli', 'Salwar Suits', 'Ethnic Dresses'],
+      'innerwear': ['Bras', 'Panties', 'Camisoles', 'Shapewear', 'Nightwear'],
+      'activewear': ['Sports Bras', 'Yoga Pants', 'Track Suits', 'Gym Wear'],
+      'winterwear': ['Jackets', 'Coats', 'Sweaters', 'Cardigans', 'Shawls']
     }
   };
 
   const footwearCategories = {
     men: ['Casual Shoes', 'Formal Shoes', 'Sports Shoes', 'Sneakers', 'Sandals', 'Flip Flops', 'Boots', 'Loafers'],
-    women: ['Heels', 'Flats', 'Sneakers', 'Sandals', 'Boots', 'Wedges', 'Sports Shoes', 'Ethnic Footwear']
+    women: ['Heels', 'Flats', 'Sneakers', 'Sandals', 'Boots', 'Wedges', 'Sports Shoes', 'Ethnic Footwear'],
   };
 
   const accessoryCategories = {
     men: ['Watches', 'Belts', 'Wallets', 'Sunglasses', 'Bags', 'Ties', 'Cufflinks', 'Caps & Hats'],
-    women: ['Jewellery', 'Watches', 'Handbags', 'Sunglasses', 'Belts', 'Scarves', 'Hair Accessories', 'Makeup']
+    women: ['Jewellery', 'Watches', 'Handbags', 'Sunglasses', 'Belts', 'Scarves', 'Hair Accessories', 'Makeup'],
+    unisex:['Watches', 'Belts', 'Wallets', 'Sunglasses', 'Bags', 'Ties', 'Cufflinks', 'Caps & Hats'],
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -183,7 +193,7 @@ const ProductUpload: React.FC = () => {
   };
 
   const updateVariant = (id: string, field: string, value: string | number) => {
-    setVariants(prev => prev.map(variant => 
+    setVariants(prev => prev.map(variant =>
       variant.id === id ? { ...variant, [field]: value } : variant
     ));
   };
@@ -433,15 +443,20 @@ const ProductUpload: React.FC = () => {
 
   // Helper to render category options for both object (clothing) and array (others)
   const renderCategoryOptions = () => {
-    const current = getCurrentCategories();
-    if (Array.isArray(current)) {
-      return current.map((cat: string) => (
-        <option key={cat} value={cat}>{cat}</option>
+    try {
+      const current = getCurrentCategories();
+      console.log(current)
+      if (Array.isArray(current)) {
+        return current.map((cat: string) => (
+          <option key={cat} value={cat}>{cat}</option>
+        ));
+      }
+      return Object.keys(current).map((cat) => (
+        <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
       ));
+    } catch (error) {
+      console.log(error.message)
     }
-    return Object.keys(current).map((cat) => (
-      <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
-    ));
   };
 
   const onValidSubmit = async () => {
@@ -625,9 +640,8 @@ const ProductUpload: React.FC = () => {
                     <img
                       src={image.url}
                       alt="Product"
-                      className={`w-full h-32 object-cover rounded-lg border-2 ${
-                        image.isPrimary ? 'border-blue-500' : 'border-gray-200'
-                      }`}
+                      className={`w-full h-32 object-cover rounded-lg border-2 ${image.isPrimary ? 'border-blue-500' : 'border-gray-200'
+                        }`}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center space-x-2">
                       <button
@@ -1062,7 +1076,7 @@ const ProductUpload: React.FC = () => {
               />
             </div>
 
-             <div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Total Stock</label>
               <input
                 type="number"
