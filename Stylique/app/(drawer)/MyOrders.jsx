@@ -112,7 +112,7 @@ export default function MyOrders() {
   ];
 
   return (
-    <ThemedContainer>
+    <ThemedContainer className='bg-white'>
       <View className="flex-1">
         <ThemedSection className="pt-4 pb-2">
 
@@ -128,8 +128,8 @@ export default function MyOrders() {
                 key={tab.id}
                 onPress={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 rounded-full mr-2 ${activeTab === tab.id
-                    ? 'bg-black'
-                    : 'bg-gray-100'
+                  ? 'bg-black'
+                  : 'bg-gray-100'
                   }`}
               >
                 <Text

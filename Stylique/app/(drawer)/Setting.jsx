@@ -5,17 +5,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Setting = () => {
 
-const router = useRouter();
+  const router = useRouter();
 
   return (
-    <SafeAreaView className= "flex-1">
-        <ScrollView  contentContainerStyle={{ flexGrow: 1  }}>
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="mx-7 gap-5 ">
           <View className="rounded-2xl ">
-            <TouchableOpacity onPress={() => (router.replace("/(Authentication)"))}>
+            <TouchableOpacity onPress={() => (router.push("(screens)/Language"))}>
               <View className="flex-row  items-center justify-between border-b border-gray-300 pb-3 ">
                 <View className="flex-row gap-3 items-center">
-                 <Fontisto name="world-o" size={24} color="gray" />
+                  <Fontisto name="world-o" size={24} color="gray" />
                   <Text className="text-2xl">Language</Text>
                 </View>
                 <View>
@@ -26,7 +26,7 @@ const router = useRouter();
             <TouchableOpacity onPress={() => (router.push("NotificationSetting"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                 <FontAwesome name="bell-o" size={24} color="gray" />
+                  <FontAwesome name="bell-o" size={24} color="gray" />
 
                   <Text className="text-2xl">Notification</Text>
 
@@ -36,10 +36,10 @@ const router = useRouter();
                 </View>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => (router.replace("/(Authentication)"))}>
+            <TouchableOpacity onPress={() => (router.push("(screens)/TermsOfUse"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                 <MaterialCommunityIcons name="clipboard-text-play-outline" size={24} color="gray" />
+                  <MaterialCommunityIcons name="clipboard-text-play-outline" size={24} color="gray" />
 
                   <Text className="text-2xl">Terms of Use</Text>
 
@@ -50,10 +50,10 @@ const router = useRouter();
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => (router.replace("/(Authentication)"))}>
+            <TouchableOpacity onPress={() => (router.push("(screens)/PrivacyPolicy"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                 <Feather name="alert-circle" size={24} color="gray" />
+                  <Feather name="alert-circle" size={24} color="gray" />
 
                   <Text className="text-2xl">Privacy Policy</Text>
 
@@ -64,10 +64,10 @@ const router = useRouter();
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => (router.replace("/(Authentication)"))}>
+            <TouchableOpacity onPress={() => (router.push("(screens)/ChatSupport"))}>
               <View className="flex-row  mt-10 items-center justify-between border-b border-gray-300 pb-3">
                 <View className="flex-row gap-3 items-center">
-                 <FontAwesome5 name="location-arrow" size={24} color="gray" />
+                  <FontAwesome5 name="location-arrow" size={24} color="gray" />
                   <Text className="text-2xl">Chat support</Text>
                 </View>
                 <View>
@@ -75,11 +75,11 @@ const router = useRouter();
                 </View>
               </View>
             </TouchableOpacity>
-           
+
           </View>
         </View>
-    </ScrollView>
-      </SafeAreaView>
+      </ScrollView>
+    </SafeAreaView>
   )
 
 }

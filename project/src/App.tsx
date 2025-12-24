@@ -21,6 +21,7 @@ import Shipping from './components/pages/Shipping';
 import Reviews from './components/pages/Reviews';
 import Support from './components/pages/Support';
 import ProductDetail from './components/pages/ProductDetail';
+import OrderDetails from './components/pages/OrderDetails';
 import Login from './components/pages/Login';
 
 // Small guard component for auth-protected routes
@@ -52,6 +53,7 @@ function App() {
                 <Route path="/products" element={<RequireAuth><Products /></RequireAuth>} />
                 <Route path="/products/:id" element={<RequireAuth><ProductDetail /></RequireAuth>} />
                 <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
+                <Route path="/orders/:id" element={<RequireAuth><OrderDetails /></RequireAuth>} />
                 <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
                 <Route path="/users" element={<RequireAuth><Users /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />

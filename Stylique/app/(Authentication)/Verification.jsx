@@ -1,27 +1,59 @@
 import axios from 'axios';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform,  ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRef, useState, useEffect } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View, TouchableOpacity, Animated } from 'react-native';
 import Toast from 'react-native-toast-message';
-
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import IpAddress from '../../Config.json';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Verification = () => {
   const [otp, setOtp] = useState(['', '', '', '']);
+  const [timer, setTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
   const inputsRef = useRef([]);
   const params = useLocalSearchParams();
   const email = params.email;
+  const shakeAnimation = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
+    if (timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setCanResend(true);
+    }
+  }, [timer]);
 
   const handleChange = (text, index) => {
+    // Handle pasting full OTP code
+    if (text.length > 1) {
+      const otpArray = text.slice(0, 4).split('');
+      const newOtp = [...otp];
+      otpArray.forEach((digit, i) => {
+        if (i < 4) newOtp[i] = digit;
+      });
+      setOtp(newOtp);
+
+      // Focus last filled input or verify if complete
+      if (otpArray.length === 4) {
+        verifyOtp(newOtp.join(''));
+      } else {
+        const nextIndex = Math.min(otpArray.length, 3);
+        inputsRef.current[nextIndex]?.focus();
+      }
+      return;
+    }
+
+    // Handle single digit entry
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
     if (text && index < inputsRef.current.length - 1) {
       inputsRef.current[index + 1].focus();
     }
-    if (newOtp.join('').length === 4) { 
+    if (newOtp.join('').length === 4) {
       verifyOtp(newOtp.join(''));
     }
   };
@@ -32,10 +64,18 @@ const Verification = () => {
     }
   };
 
+  const shakeInputs = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnimation, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
+
   const API = axios.create({
     baseURL: `http://${IpAddress.IpAddress}:5001`,
   });
-
 
   const verifyOtp = async (OTP) => {
     try {
@@ -55,71 +95,137 @@ const Verification = () => {
         params: { email: email }
       });
     } catch (error) {
+      shakeInputs();
+      setOtp(['', '', '', '']);
+      inputsRef.current[0]?.focus();
       Toast.show({
         type: 'error',
         text1: 'Verification Failed',
-        text2: error.response?.data?.message || 'An error occurred'
+        text2: error.response?.data?.message || 'Invalid OTP code'
       });
     }
   };
 
+  const handleResend = async () => {
+    if (!canResend) return;
 
+    try {
+      await API.post('api/user/sendOtp', { email });
+      setTimer(60);
+      setCanResend(false);
+      setOtp(['', '', '', '']);
+      inputsRef.current[0]?.focus();
+      Toast.show({
+        type: 'success',
+        text1: 'OTP Sent',
+        text2: 'A new verification code has been sent to your email'
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to Resend',
+        text2: 'Please try again later'
+      });
+    }
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 1 : 100}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        className="px-6"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="p-8">
-          <View className="gap-10">
-            <View className="gap-5 ">
-              <Text className="text-3xl font-bold">Verification code</Text>
-              <Text className="text-gray-500">
-                Enter email associated with your account and we’ll send and email with intructions to reset your password
-              </Text>
-            </View>
-            <View style={styles.container}>
-              {otp.map((value, index) => (
+        {/* Header Section */}
+        <View className="mb-8 items-center">
+          <Text className="text-3xl font-bold text-gray-900 text-center">
+            Verify Your Email
+          </Text>
+          <Text className="text-base text-gray-500 text-center mt-3 px-4">
+            We've sent a 4-digit verification code to
+          </Text>
+          <Text className="text-base font-semibold text-gray-900 text-center mt-1">
+            {email}
+          </Text>
+        </View>
+
+        {/* OTP Input Section */}
+        <View className="mt-8">
+          <Text className="text-sm font-semibold text-gray-700 text-center mb-6">
+            Enter Verification Code
+          </Text>
+          <Animated.View
+            style={{
+              transform: [{ translateX: shakeAnimation }],
+              flexDirection: 'row',
+              justifyContent: 'center',
+              gap: 12
+            }}
+          >
+            {otp.map((value, index) => (
+              <View
+                key={index}
+                className={`w-16 h-16 rounded-2xl border-2 ${value ? 'border-black bg-gray-50' : 'border-gray-300 bg-white'
+                  } items-center justify-center shadow-sm`}
+              >
                 <TextInput
-                  key={index}
                   ref={el => (inputsRef.current[index] = el)}
                   value={value}
-                  style={styles.input}
+                  className="text-2xl font-bold text-gray-900 text-center w-full h-full"
                   keyboardType="numeric"
                   maxLength={1}
                   onChangeText={text => handleChange(text, index)}
                   onKeyPress={e => handleKeyPress(e, index)}
                   autoFocus={index === 0}
                   returnKeyType="done"
-                  textAlign="center"
+                  selectionColor="#000000"
+                  textContentType={index === 0 ? "oneTimeCode" : "none"}
+                  autoComplete={index === 0 ? "sms-otp" : "off"}
                 />
-              ))}
+              </View>
+            ))}
+          </Animated.View>
+        </View>
+
+        {/* Timer and Resend Section */}
+        <View className="mt-8 items-center">
+          {!canResend ? (
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons name="clock-outline" size={20} color="#6B7280" />
+              <Text className="text-gray-600 ml-2">
+                Resend code in <Text className="font-bold text-gray-900">{timer}s</Text>
+              </Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={handleResend}
+              className="flex-row items-center bg-gray-100 px-6 py-3 rounded-full"
+            >
+              <MaterialCommunityIcons name="refresh" size={20} color="#000000" />
+              <Text className="text-black font-semibold ml-2">Resend Code</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Info Section */}
+        <View className="mt-12 bg-blue-50 p-4 rounded-2xl mx-4">
+          <View className="flex-row items-start">
+            <MaterialCommunityIcons name="information" size={20} color="#3B82F6" />
+            <View className="flex-1 ml-3">
+              <Text className="text-sm text-gray-700">
+                Didn't receive the code? Check your spam folder or ensure the email address is correct.
+              </Text>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+
+
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
-    alignSelf: 'center',
-  },
-  input: {
-    height: 50,
-    width: 50,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    fontSize: 24,
-  },
-});
-
-
-export default Verification
+export default Verification;

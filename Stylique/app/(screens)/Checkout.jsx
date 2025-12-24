@@ -112,7 +112,7 @@ const Checkout = () => {
   }
 
   return (
-    <ThemedContainer>
+    <ThemedContainer className="bg-white">
       <ScrollView className="flex-1">
         <ThemedSection className="pt-4 pb-6">
           <View className="mb-6">
@@ -126,6 +126,9 @@ const Checkout = () => {
                       <Text className="text-white text-xs font-medium">Default</Text>
                     </View>
                   )}
+                </View>
+                <View className="flex-row items-center mb-2">
+                  <Text className="font-bold text-gray-900 mr-2">{address.firstName} {address.lastName}</Text>
                 </View>
                 <Text className="text-gray-700 mb-1">{address.houseNo}, {address.street}</Text>
                 <Text className="text-gray-700 mb-1">{address.city}, {address.state}</Text>

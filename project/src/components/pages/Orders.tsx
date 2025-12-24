@@ -155,7 +155,7 @@ const Orders: React.FC = () => {
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-black"
             />
           </div>
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black"
@@ -167,7 +167,7 @@ const Orders: React.FC = () => {
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <select 
+          <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black"
@@ -248,7 +248,11 @@ const Orders: React.FC = () => {
                       {order.created_at ? new Date(order.created_at).toLocaleDateString() : '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-black hover:text-gray-600 mr-3" title="View Details">
+                      <button
+                        onClick={() => window.location.href = `/orders/${order.id}`}
+                        className="text-black hover:text-gray-600 mr-3"
+                        title="View Details"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
                     </td>

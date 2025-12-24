@@ -9,7 +9,7 @@ const router = Router();
 
 
 // List all products
-router.get('/',  async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
       orderBy: { id: 'desc' },
@@ -78,7 +78,7 @@ router.get('/categoryCounts', async (req, res) => {
 
 
 // Get one product by id
-router.get('/:id', async (req, res) =>{ 
+router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
     const product = await prisma.product.findFirst({
@@ -99,12 +99,12 @@ router.get('/:id', async (req, res) =>{
   }
 });
 
-router.get('/pid/:id', async (req, res) =>{ 
+router.get('/pid/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
 
     const product = await prisma.product.findFirst({
-      where: {id},
+      where: { id },
       include: {
         productimage: true,
         variant: true,
@@ -121,8 +121,8 @@ router.get('/pid/:id', async (req, res) =>{
   }
 });
 
-// Create product
-router.post('/',auth, async (req, res) => {
+
+router.post('/', auth, async (req, res) => {
   try {
     const { images, variants, ...fields } = req.body;
 
@@ -175,12 +175,11 @@ router.post('/',auth, async (req, res) => {
       weight,
     }))(fields);
 
-    // Remove relation fields from top-level Product payload
-    ['material','fabric','pattern','collarType','sleeveType','fit','occasion','season','careInstructions']
+    ['material', 'fabric', 'pattern', 'collarType', 'sleeveType', 'fit', 'occasion', 'season', 'careInstructions']
       .forEach((k) => delete fields[k]);
-    ['footwearType','heelHeight','soleMaterial','upperMaterial','closure']
+    ['footwearType', 'heelHeight', 'soleMaterial', 'upperMaterial', 'closure']
       .forEach((k) => delete fields[k]);
-    ['accessoryType','dimensions','weight']
+    ['accessoryType', 'dimensions', 'weight']
       .forEach((k) => delete fields[k]);
 
     const now = new Date();
@@ -203,13 +202,15 @@ router.post('/',auth, async (req, res) => {
           ? { create: images.map((i) => ({ url: i.url, isPrimary: !!i.isPrimary })) }
           : undefined,
         variant: variants?.length
-          ? { create: variants.map((v) => ({
+          ? {
+            create: variants.map((v) => ({
               size: v.size ?? null,
               color: v.color ?? null,
               stock: Number(v.stock ?? 0),
               price: String(v.price ?? '0'),
               sku: v.sku ?? null,
-            })) }
+            }))
+          }
           : undefined,
       },
     });
@@ -221,7 +222,7 @@ router.post('/',auth, async (req, res) => {
 });
 
 // Update product
-router.put('/:id', auth,async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { images, variants, ...fields } = req.body;
@@ -279,11 +280,11 @@ router.put('/:id', auth,async (req, res) => {
     }))(fields);
 
     // Remove relation fields from top-level Product payload
-    ['material','fabric','pattern','collarType','sleeveType','fit','occasion','season','careInstructions']
+    ['material', 'fabric', 'pattern', 'collarType', 'sleeveType', 'fit', 'occasion', 'season', 'careInstructions']
       .forEach((k) => delete fields[k]);
-    ['footwearType','heelHeight','soleMaterial','upperMaterial','closure']
+    ['footwearType', 'heelHeight', 'soleMaterial', 'upperMaterial', 'closure']
       .forEach((k) => delete fields[k]);
-    ['accessoryType','dimensions','weight']
+    ['accessoryType', 'dimensions', 'weight']
       .forEach((k) => delete fields[k]);
 
     // Basic update
@@ -296,35 +297,35 @@ router.put('/:id', auth,async (req, res) => {
         // If any clothing fields are supplied, upsert ClothingDetail
         ...(Object.values(clothingFields).some((v) => v !== undefined)
           ? {
-              clothingdetail: {
-                upsert: {
-                  create: clothingFields,
-                  update: clothingFields,
-                },
+            clothingdetail: {
+              upsert: {
+                create: clothingFields,
+                update: clothingFields,
               },
-            }
+            },
+          }
           : {}),
         // If any footwear fields are supplied, upsert FootwearDetail
         ...(Object.values(footwearFields).some((v) => v !== undefined)
           ? {
-              footweardetail: {
-                upsert: {
-                  create: footwearFields,
-                  update: footwearFields,
-                },
+            footweardetail: {
+              upsert: {
+                create: footwearFields,
+                update: footwearFields,
               },
-            }
+            },
+          }
           : {}),
         // If any accessory fields are supplied, upsert AccessoryDetail
         ...(Object.values(accessoryFields).some((v) => v !== undefined)
           ? {
-              accessorydetail: {
-                upsert: {
-                  create: accessoryFields,
-                  update: accessoryFields,
-                },
+            accessorydetail: {
+              upsert: {
+                create: accessoryFields,
+                update: accessoryFields,
               },
-            }
+            },
+          }
           : {}),
       },
     });
@@ -372,10 +373,10 @@ router.put('/:id', auth,async (req, res) => {
     res.status(400).json({ error: 'Failed to update product', details: e?.message });
   }
 })
-;
+  ;
 
 // Delete product
-router.delete('/:id',auth, async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const owned = await prisma.product.findFirst({ where: { id } });
@@ -389,11 +390,11 @@ router.delete('/:id',auth, async (req, res) => {
 });
 
 
-router.post('/subcat', async (req, res) =>{ 
+router.post('/subcat', async (req, res) => {
   try {
-    const {subcategory} = req.body;
+    const { subcategory } = req.body;
     const product = await prisma.product.findMany({
-      where: { subcategory:subcategory },
+      where: { subcategory: subcategory },
       include: {
         productimage: true,
         variant: true,
@@ -408,6 +409,47 @@ router.post('/subcat', async (req, res) =>{
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+// Get product recommendations based on category
+router.get('/recommendations/:productId', async (req, res) => {
+  try {
+    const productId = Number(req.params.productId);
+
+    // First, get the product to find its category
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { subcategory: true, productType: true, gender: true }
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    // Find similar products from the same subcategory, excluding the current product
+    const recommendations = await prisma.product.findMany({
+      where: {
+        AND: [
+          { subcategory: product.subcategory },
+          { id: { not: productId } },
+          { gender: product.gender },
+          { totalStock: { not: "0" } } // Only recommend products in stock (totalStock is String)
+        ]
+      },
+      take: 8, // Limit to 8 recommendations
+      orderBy: { createdAt: 'desc' }, // Show newest products first
+      include: {
+        productimage: {
+          where: { isPrimary: true },
+          take: 1
+        }
+      }
+    });
+
+    res.json(recommendations);
+  } catch (e) {
+    console.error('Error fetching recommendations:', e);
+    res.status(500).json({ error: 'Failed to fetch recommendations' });
   }
 });
 

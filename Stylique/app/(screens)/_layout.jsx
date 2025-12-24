@@ -16,7 +16,7 @@ const _layout = () => {
           <Text className="text-2xl  font-bold">Notification</Text>
         ),
         headerBackground: () => (
-          <View style={{ flex: 1, backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -30,7 +30,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Profile Setting</Text>
         ),
         headerBackground: () => (
-          <View style={{ flex: 1, backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -44,7 +44,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Notification</Text>
         ),
         headerBackground: () => (
-          <View style={{ flex: 1, backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -58,7 +58,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Voucher</Text>
         ),
         headerBackground: () => (
-          <View style={{ flex: 1, backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -73,7 +73,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Checkout</Text>
         ),
         headerBackground: () => (
-          <View style={{ flex: 1, backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -133,7 +133,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Address</Text>
         ),
         headerBackground: () => (
-          <View style={{ backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -147,7 +147,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Delivery Address</Text>
         ),
         headerBackground: () => (
-          <View style={{ backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -219,7 +219,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Order Summary</Text>
         ),
         headerBackground: () => (
-          <View style={{ backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -247,7 +247,7 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Track Order</Text>
         ),
         headerBackground: () => (
-          <View style={{ backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
@@ -261,11 +261,67 @@ const _layout = () => {
           <Text className="text-2xl font-bold">Rate Product</Text>
         ),
         headerBackground: () => (
-          <View style={{ backgroundColor: 'transparent' }} />
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
         ),
       })} />
 
       <Stack.Screen name='Test' options={{ headerShown: false }} />
+
+      <Stack.Screen name='Language' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Language</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
+        ),
+      })} />
+
+      <Stack.Screen name='PrivacyPolicy' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Privacy Policy</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
+        ),
+      })} />
+
+      <Stack.Screen name='TermsOfUse' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Terms of Use</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
+        ),
+      })} />
+
+      <Stack.Screen name='ChatSupport' options={({ navigation }) => ({
+        headerLeft: () => (
+          <Pressable className=" rounded-full p-2 " onPress={() => navigation.goBack()}>
+            <AntDesign name="left" size={20} color="black" />
+          </Pressable>
+        ),
+        headerTitle: () => (
+          <Text className="text-2xl font-bold">Chat Support</Text>
+        ),
+        headerBackground: () => (
+          <View style={{ backgroundColor: 'white', flex: 1 }} />
+        ),
+      })} />
 
     </Stack>
 

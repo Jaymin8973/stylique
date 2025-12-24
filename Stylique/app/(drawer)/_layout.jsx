@@ -1,9 +1,13 @@
-import { AntDesign, Feather, MaterialCommunityIcons, Octicons } from '@expo/vector-icons';
+import { AntDesign, Feather, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { Drawer } from 'expo-router/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import CustomDrawerContent from './CustomDrawerContent';
+import { Pressable } from 'react-native';
+import { useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 
 export default function DrawerLayout() {
+    const navigation = useNavigation();
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Drawer
@@ -19,6 +23,7 @@ export default function DrawerLayout() {
                     drawerInactiveTintColor: 'gray',
                     headerShown: false,
                 }}
+
             >
                 <Drawer.Screen
                     name="(tabs)"
@@ -36,6 +41,14 @@ export default function DrawerLayout() {
                         drawerLabel: 'My Orders',
                         title: 'My Orders',
                         headerShown: true,
+                        headerLeft: () => {
+                            const navigation = useNavigation();
+                            return (
+                                <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} className="ml-8">
+                                    <MaterialIcons name="notes" size={26} color="black" style={{ transform: [{ scaleY: -1 }] }} />
+                                </Pressable>
+                            );
+                        },
                         drawerIcon: ({ color, focused }) => (
                             <MaterialCommunityIcons name="clipboard-list-outline" size={24} color={focused ? "black" : "gray"} />
                         ),
@@ -47,6 +60,14 @@ export default function DrawerLayout() {
                         drawerLabel: 'Settings',
                         title: 'Settings',
                         headerShown: true,
+                        headerLeft: () => {
+                            const navigation = useNavigation();
+                            return (
+                                <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} className="ml-8">
+                                    <MaterialIcons name="notes" size={26} color="black" style={{ transform: [{ scaleY: -1 }] }} />
+                                </Pressable>
+                            );
+                        },
                         drawerIcon: ({ color, focused }) => (
                             <AntDesign name="setting" size={24} color={focused ? "black" : "gray"} />
                         ),
@@ -58,6 +79,14 @@ export default function DrawerLayout() {
                         drawerLabel: 'Support',
                         title: 'Support',
                         headerShown: true,
+                        headerLeft: () => {
+                            const navigation = useNavigation();
+                            return (
+                                <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} className="ml-8">
+                                    <MaterialIcons name="notes" size={26} color="black" style={{ transform: [{ scaleY: -1 }] }} />
+                                </Pressable>
+                            );
+                        },
                         drawerIcon: ({ color, focused }) => (
                             <MaterialCommunityIcons name="email-outline" size={24} color={focused ? "black" : "gray"} />
                         ),
@@ -69,6 +98,14 @@ export default function DrawerLayout() {
                         drawerLabel: 'About Us',
                         title: 'About Us',
                         headerShown: true,
+                        headerLeft: () => {
+                            const navigation = useNavigation();
+                            return (
+                                <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} className="ml-8">
+                                    <MaterialIcons name="notes" size={26} color="black" style={{ transform: [{ scaleY: -1 }] }} />
+                                </Pressable>
+                            );
+                        },
                         drawerIcon: ({ color, focused }) => (
                             <Feather name="alert-circle" size={24} color={focused ? "black" : "gray"} />
                         ),

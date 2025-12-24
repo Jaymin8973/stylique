@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useNotifications } from '../../NotificationProvider';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 
 export default function TabsLayout() {
   const router = useRouter();
@@ -27,8 +28,8 @@ export default function TabsLayout() {
         name="index"
         options={{
           headerLeft: () => (
-            <Pressable onPress={() => navigation.openDrawer()} className="ml-8">
-              <MaterialIcons name="notes" size={30} color="black" style={{ transform: [{ scaleY: -1 }] }} />
+            <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} className="ml-8">
+              <MaterialIcons name="notes" size={26} color="black" />
             </Pressable>
           ),
           headerBackground: () => (
@@ -70,8 +71,8 @@ export default function TabsLayout() {
         name="Search"
         options={{
           headerLeft: () => (
-            <Pressable onPress={() => navigation.openDrawer()} className="ml-8">
-              <MaterialIcons name="notes" size={30} color="black" style={{ transform: [{ scaleY: -1 }] }} />
+            <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} className="ml-8">
+              <MaterialIcons name="notes" size={26} color="black" />
             </Pressable>
           ),
           headerBackground: () => (
@@ -113,8 +114,8 @@ export default function TabsLayout() {
         name="Cart"
         options={{
           headerLeft: () => (
-            <Pressable onPress={() => navigation.openDrawer()} className="ml-8">
-              <MaterialIcons name="notes" size={30} color="black" style={{ transform: [{ scaleY: -1 }] }} />
+            <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} className="ml-8">
+              <MaterialIcons name="notes" size={26} color="black" />
             </Pressable>
           ),
           headerTitle: () => (

@@ -313,4 +313,64 @@ router.get('/:id/invoice/pdf', async (req, res) => {
   }
 });
 
+// Admin: Update order status
+router.patch('/:id/status', async (req, res) => {
+  try {
+    // Only allow seller/admin roles
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const id = Number(req.params.id);
+    const { status } = req.body;
+
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+    if (!status) return res.status(400).json({ error: 'Status is required' });
+
+    // Validate status
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+
+    const order = await prisma.orders.findUnique({ where: { id } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Update order status
+    const updated = await prisma.orders.update({
+      where: { id },
+      data: {
+        status,
+        updatedAt: new Date()
+      },
+      include: {
+        items: true,
+        user: true
+      }
+    });
+
+    // Create tracking event for status change
+    const statusMessages = {
+      pending: 'Order placed and awaiting confirmation',
+      processing: 'Order is being processed',
+      shipped: 'Order has been shipped',
+      delivered: 'Order has been delivered',
+      cancelled: 'Order has been cancelled'
+    };
+
+    await prisma.ordertracking.create({
+      data: {
+        orderId: id,
+        status: statusMessages[status] || `Status updated to ${status}`,
+        eventAt: new Date()
+      }
+    });
+
+    return res.json(updated);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to update order status' });
+  }
+});
+
 export default router;

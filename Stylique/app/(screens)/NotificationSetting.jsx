@@ -1,11 +1,16 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 const NotificationSetting = () => {
-        const [isEnabled, setIsEnabled] = useState(false);
-      const toggleSwitch = () => setIsEnabled(previousState => !previousState);
- return (
-    <ScrollView>
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationSound, setNotificationSound] = useState(false);
+  const [lockScreenNotification, setLockScreenNotification] = useState(false);
+
+
+
+  return (
+    <ScrollView className="bg-white">
       <SafeAreaView>
         <View className="mx-5 gap-10">
           <View className="flex-row justify-between items-center">
@@ -18,16 +23,16 @@ const NotificationSetting = () => {
               </Text>
             </View>
             <View>
-               <Switch
-          trackColor={{false: '#CBCDD8', true: '#508A7B'}}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleSwitch}
-          value={isEnabled}
-        />
+              <Switch
+                trackColor={{ false: '#CBCDD8', true: '#508A7B' }}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={setShowNotification}
+                value={showNotification}
+              />
             </View>
           </View>
 
-            <View className="flex-row justify-between items-center">
+          <View className="flex-row justify-between items-center">
             <View>
               <Text className="text-2xl mb-1">
                 Notification sounds
@@ -37,16 +42,16 @@ const NotificationSetting = () => {
               </Text>
             </View>
             <View>
-               <Switch
-          trackColor={{false: '#CBCDD8', true: '#508A7B'}}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleSwitch}
-          value={""}
-        />
+              <Switch
+                trackColor={{ false: '#CBCDD8', true: '#508A7B' }}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={setNotificationSound}
+                value={notificationSound}
+              />
             </View>
           </View>
 
-            <View className="flex-row justify-between items-center">
+          <View className="flex-row justify-between items-center">
             <View>
               <Text className="text-2xl mb-1">
                 Lock screen Notification
@@ -56,18 +61,18 @@ const NotificationSetting = () => {
               </Text>
             </View>
             <View>
-               <Switch
-          trackColor={{false: '#CBCDD8', true: '#508A7B'}}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleSwitch}
-          value={""}
-        />
+              <Switch
+                trackColor={{ false: '#CBCDD8', true: '#508A7B' }}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={setLockScreenNotification}
+                value={lockScreenNotification}
+              />
             </View>
           </View>
         </View>
       </SafeAreaView>
     </ScrollView>
-  )
-}
+  );
+};
 
-export default NotificationSetting
+export default NotificationSetting;

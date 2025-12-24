@@ -70,81 +70,81 @@ const Address = () => {
 
     return (
         <ThemedContainer>
-            <SafeAreaView className="flex-1">
-                <ScrollView className="flex-1">
-                    <ThemedSection className="pt-4 pb-6">
-                        <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-2xl font-bold text-gray-900">Delivery Address</Text>
-                            <ThemedButton
-                                title="Add New"
-                                onPress={() => router.push('AddressForm')}
-                                variant="secondary"
-                                icon="add"
-                            />
+            <ScrollView className="flex-1">
+
+                <ThemedSection className="pt-4 pb-6">
+                    <View className="flex-row justify-between items-center mb-6">
+                        <Text className="text-2xl font-bold text-gray-900">Delivery Address</Text>
+                        <ThemedButton
+                            title="Add New"
+                            onPress={() => router.push('AddressForm')}
+                            variant="secondary"
+                            icon="add"
+                        />
+                    </View>
+
+                    {loading ? (
+                        <View className="flex-1 justify-center items-center py-12">
+                            <ActivityIndicator size="large" color={THEME.colors.primary} />
+                            <Text className="mt-4 text-gray-600">Loading addresses...</Text>
                         </View>
+                    ) : addresses.length === 0 ? (
+                        <View className="flex-1 justify-center items-center py-12">
+                            <FontAwesome5 name="map-marked-alt" size={48} color={THEME.colors.text.tertiary} />
+                            <Text className="mt-4 text-gray-500 text-center">
+                                No addresses found. Add your first address to get started.
+                            </Text>
 
-                        {loading ? (
-                            <View className="flex-1 justify-center items-center py-12">
-                                <ActivityIndicator size="large" color={THEME.colors.primary} />
-                                <Text className="mt-4 text-gray-600">Loading addresses...</Text>
-                            </View>
-                        ) : addresses.length === 0 ? (
-                            <View className="flex-1 justify-center items-center py-12">
-                                <FontAwesome5 name="map-marked-alt" size={48} color={THEME.colors.text.tertiary} />
-                                <Text className="mt-4 text-gray-500 text-center">
-                                    No addresses found. Add your first address to get started.
-                                </Text>
-
-                            </View>
-                        ) : (
-                            <View className="gap-4">
-                                {addresses.map((address) => (
-                                    <Pressable
-                                        key={address.id}
-                                        onPress={() => SelectHandle(address.id)}
-                                        className={`bg-white rounded-2xl border-2 p-4 ${selectedId === address.id
-                                                ? 'border-black'
-                                                : 'border-gray-100'
-                                            }`}
-                                    >
-                                        <View className="flex-row justify-between items-start">
-                                            <View className="flex-1">
-                                                <View className="flex-row items-center mb-2">
-                                                    <FontAwesome5
-                                                        name="map-marker-alt"
-                                                        size={16}
-                                                        color={THEME.colors.primary}
-                                                    />
-                                                    <Text className="ml-2 font-semibold text-gray-900">
-                                                        Delivery Address
-                                                    </Text>
-                                                    {selectedId === address.id && (
-                                                        <View className="ml-2 bg-black px-2 py-1 rounded-full">
-                                                            <Text className="text-white text-xs font-medium">Selected</Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-                                                <Text className="text-gray-600 mb-1">{address.houseNo}, {address.street}</Text>
-                                                <Text className="text-gray-600 mb-1">{address.city}, {address.state}</Text>
-                                                <Text className="text-gray-600">{address.pincode}</Text>
+                        </View>
+                    ) : (
+                        <View className="gap-4">
+                            {addresses.map((address) => (
+                                <Pressable
+                                    key={address.id}
+                                    onPress={() => SelectHandle(address.id)}
+                                    className={`bg-white rounded-2xl border-2 p-4 ${selectedId === address.id
+                                        ? 'border-black'
+                                        : 'border-gray-100'
+                                        }`}
+                                >
+                                    <View className="flex-row justify-between items-start">
+                                        <View className="flex-1">
+                                            <View className="flex-row items-center mb-2">
+                                                <FontAwesome5
+                                                    name="map-marker-alt"
+                                                    size={16}
+                                                    color={THEME.colors.primary}
+                                                />
+                                                <Text className="ml-2 font-semibold text-gray-900">
+                                                    Delivery Address
+                                                </Text>
+                                                {selectedId === address.id && (
+                                                    <View className="ml-2 bg-black px-2 py-1 rounded-full">
+                                                        <Text className="text-white text-xs font-medium">Selected</Text>
+                                                    </View>
+                                                )}
                                             </View>
-                                            <TouchableOpacity
-                                                onPress={() => router.push({
-                                                    pathname: 'AddressForm',
-                                                    params: { addressId: address.id }
-                                                })}
-                                                className="p-2"
-                                            >
-                                                <FontAwesome5 name="edit" size={16} color={THEME.colors.text.secondary} />
-                                            </TouchableOpacity>
+                                            <Text className="text-gray-600 mb-1">{address.houseNo}, {address.street}</Text>
+                                            <Text className="text-gray-600 mb-1">{address.city}, {address.state}</Text>
+                                            <Text className="text-gray-600">{address.pincode}</Text>
                                         </View>
-                                    </Pressable>
-                                ))}
-                            </View>
-                        )}
-                    </ThemedSection>
-                </ScrollView>
-            </SafeAreaView>
+                                        <TouchableOpacity
+                                            onPress={() => router.push({
+                                                pathname: 'AddressForm',
+                                                params: { addressId: address.id }
+                                            })}
+                                            className="p-2"
+                                        >
+                                            <FontAwesome5 name="edit" size={16} color={THEME.colors.text.secondary} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </Pressable>
+                            ))}
+                        </View>
+                    )}
+                </ThemedSection>
+
+            </ScrollView>
         </ThemedContainer>
     );
 }

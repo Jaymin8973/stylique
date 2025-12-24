@@ -161,7 +161,7 @@ router.patch('/resetPassword', async (req, res) => {
   if (!email || !newPassword) {
     return res.status(400).json({ message: 'Email and new password are required' });
   }
-  
+
   try {
     const user = await prisma.users.findFirst({ where: { Email: email } });
     if (!user) {
