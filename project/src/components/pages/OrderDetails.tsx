@@ -16,6 +16,259 @@ const OrderDetails: React.FC = () => {
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState('');
     const [updating, setUpdating] = useState(false);
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownloadInvoice = async () => {
+        if (!id) return;
+
+        setDownloading(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`http://localhost:5001/api/orders/admin/${id}/invoice/pdf`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to download invoice');
+            }
+
+            // Get the PDF blob
+            const blob = await response.blob();
+
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice-order-${id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err: any) {
+            alert(err.message || 'Failed to download invoice');
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const handlePrintLabel = () => {
+        if (!order) return;
+
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank', 'width=400,height=600');
+        if (!printWindow) {
+            alert('Please allow popups to print shipping label');
+            return;
+        }
+
+        const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN') : 'N/A';
+
+        // Generate HTML for shipping label (Myntra-style packing slip)
+        const labelHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Shipping Label - Order #${order.id}</title>
+                <style>
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 10px;
+                        background: white;
+                    }
+                    .label-container {
+                        border: 2px solid #000;
+                        padding: 15px;
+                        max-width: 400px;
+                        margin: 0 auto;
+                    }
+                    .header {
+                        text-align: center;
+                        border-bottom: 2px solid #000;
+                        padding-bottom: 10px;
+                        margin-bottom: 10px;
+                    }
+                    .logo {
+                        font-size: 28px;
+                        font-weight: bold;
+                        letter-spacing: 2px;
+                    }
+                    .order-info {
+                        display: flex;
+                        justify-content: space-between;
+                        border-bottom: 1px dashed #000;
+                        padding-bottom: 10px;
+                        margin-bottom: 10px;
+                        font-size: 12px;
+                    }
+                    .section {
+                        margin-bottom: 15px;
+                    }
+                    .section-title {
+                        font-size: 10px;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        color: #666;
+                        margin-bottom: 5px;
+                    }
+                    .address-block {
+                        font-size: 14px;
+                        line-height: 1.5;
+                    }
+                    .customer-name {
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                    }
+                    .product-info {
+                        background: #f5f5f5;
+                        padding: 10px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                    }
+                    .product-name {
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                    }
+                    .product-details {
+                        display: flex;
+                        justify-content: space-between;
+                    }
+                    .barcode-section {
+                        text-align: center;
+                        border-top: 2px solid #000;
+                        padding-top: 10px;
+                        margin-top: 10px;
+                    }
+                    .order-id-large {
+                        font-size: 24px;
+                        font-weight: bold;
+                        letter-spacing: 3px;
+                    }
+                    .barcode {
+                        font-family: 'Libre Barcode 39', monospace;
+                        font-size: 48px;
+                        letter-spacing: 5px;
+                    }
+                    .cod-badge {
+                        display: inline-block;
+                        background: #000;
+                        color: #fff;
+                        padding: 3px 10px;
+                        font-size: 12px;
+                        font-weight: bold;
+                        border-radius: 3px;
+                        margin-left: 10px;
+                    }
+                    .prepaid-badge {
+                        display: inline-block;
+                        background: #22c55e;
+                        color: #fff;
+                        padding: 3px 10px;
+                        font-size: 12px;
+                        font-weight: bold;
+                        border-radius: 3px;
+                        margin-left: 10px;
+                    }
+                    .amount-section {
+                        text-align: center;
+                        font-size: 20px;
+                        font-weight: bold;
+                        padding: 10px;
+                        background: #f0f0f0;
+                        border-radius: 4px;
+                        margin-top: 10px;
+                    }
+                    .footer {
+                        text-align: center;
+                        font-size: 10px;
+                        color: #666;
+                        margin-top: 15px;
+                        padding-top: 10px;
+                        border-top: 1px solid #ddd;
+                    }
+                    @media print {
+                        body {
+                            padding: 0;
+                        }
+                        .label-container {
+                            border: 2px solid #000;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="label-container">
+                    <div class="header">
+                        <div class="logo">STYLIQUE</div>
+                    </div>
+                    
+                    <div class="order-info">
+                        <div><strong>Order #:</strong> ${order.id}</div>
+                        <div><strong>Date:</strong> ${orderDate}</div>
+                        <span class="prepaid-badge">PREPAID</span>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Ship To:</div>
+                        <div class="address-block">
+                            <div class="customer-name">${order.customer_name}</div>
+                            <div>${order.shipping_address || 'Address not provided'}</div>
+                            <div style="margin-top: 5px;">
+                                <strong>Email:</strong> ${order.customer_email}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Product Details:</div>
+                        <div class="product-info">
+                            <div class="product-name">${order.product_name || 'Product'}</div>
+                            <div class="product-details">
+                                <span>Qty: ${order.quantity}</span>
+                                <span>SKU: #${order.product_id}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="amount-section">
+                        Amount: ₹${(order.total_amount || 0).toLocaleString()}
+                    </div>
+                    
+                    <div class="barcode-section">
+                        <div class="order-id-large">ORD${String(order.id).padStart(8, '0')}</div>
+                        <div style="font-size: 10px; color: #666; margin-top: 5px;">
+                            *ORD${String(order.id).padStart(8, '0')}*
+                        </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <div>Handle with care • Do not bend</div>
+                        <div style="margin-top: 5px;">www.stylique.com | support@stylique.com</div>
+                    </div>
+                </div>
+                
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    }
+                </script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(labelHTML);
+        printWindow.document.close();
+    };
 
     useEffect(() => {
         loadOrderDetails();
@@ -181,13 +434,20 @@ const OrderDetails: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex space-x-3">
-                    <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button
+                        onClick={handlePrintLabel}
+                        className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
                         <Printer className="w-4 h-4 mr-2" />
-                        Print
+                        Print Label
                     </button>
-                    <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Download className="w-4 h-4 mr-2" />
-                        Invoice
+                    <button
+                        onClick={handleDownloadInvoice}
+                        disabled={downloading}
+                        className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Download className={`w-4 h-4 mr-2 ${downloading ? 'animate-pulse' : ''}`} />
+                        {downloading ? 'Downloading...' : 'Invoice'}
                     </button>
                     <button
                         onClick={loadOrderDetails}

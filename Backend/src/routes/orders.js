@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import authAny from '../middleware/authAny.js';
 import { generateInvoicePDF, formatInvoiceData } from '../utils/invoice-generator.js';
+import { sendOrderNotificationEmail } from '../utils/email-service.js';
 
 const router = Router();
 
@@ -91,6 +92,33 @@ router.post('/', async (req, res) => {
       return created;
     });
 
+    // Fetch complete order with user details for notification
+    const fullOrder = await prisma.orders.findUnique({
+      where: { id: order.id },
+      include: {
+        items: true,
+        user: true,
+      },
+    });
+
+    // Send email notification to seller (async, don't block response)
+    sendOrderNotificationEmail(fullOrder).catch((err) => {
+      console.error('Failed to send order notification email:', err.message);
+    });
+
+    // Create seller dashboard notification
+    const itemNames = order.items.map(i => i.productName).join(', ');
+    await prisma.sellernotification.create({
+      data: {
+        type: 'new_order',
+        title: `New Order #${order.orderNumber || order.id}`,
+        message: `New order received from ${fullOrder?.user?.Username || 'Customer'}. Items: ${itemNames}. Total: ₹${parseFloat(order.total || 0).toFixed(2)}`,
+        orderId: order.id,
+      },
+    }).catch((err) => {
+      console.error('Failed to create seller notification:', err.message);
+    });
+
     return res.status(201).json(order);
   } catch (e) {
     console.error(e);
@@ -174,6 +202,69 @@ router.get('/admin', async (req, res) => {
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Failed to fetch admin orders' });
+  }
+});
+
+// Admin: Get invoice data for any order (sellers)
+router.get('/admin/:id/invoice', async (req, res) => {
+  try {
+    // Only allow seller/admin roles
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+
+    const order = await prisma.orders.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        user: true,
+      },
+    });
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const invoiceData = formatInvoiceData(order);
+    return res.json(invoiceData);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to generate invoice data' });
+  }
+});
+
+// Admin: Generate and download invoice PDF for any order (sellers)
+router.get('/admin/:id/invoice/pdf', async (req, res) => {
+  try {
+    // Only allow seller/admin roles
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+
+    const order = await prisma.orders.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        user: true,
+      },
+    });
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const pdfBuffer = await generateInvoicePDF(order);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${order.orderNumber || order.id}.pdf`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    return res.send(pdfBuffer);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to generate invoice PDF' });
   }
 });
 

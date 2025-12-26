@@ -19,6 +19,7 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       const res = await AuthApi.login({ email, password });
+      console.log(res);
       localStorage.setItem('authToken', res.token);
       localStorage.setItem('authUser', JSON.stringify(res.user));
       navigate('/', { replace: true });

@@ -454,3 +454,16 @@ model review {
   @@unique([userId, productId], map: "uniq_review_user_product")
   @@index([productId], map: "idx_review_productId")
 }
+
+model sellernotification {
+  id        Int      @id @default(autoincrement())
+  type      String   // 'new_order', 'order_cancelled', etc.
+  title     String
+  message   String   @db.Text
+  orderId   Int?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([isRead], map: "idx_sellernotification_isRead")
+  @@index([createdAt], map: "idx_sellernotification_createdAt")
+}

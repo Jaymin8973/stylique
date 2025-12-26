@@ -61,12 +61,109 @@ router.post('/broadcast', auth, async (req, res) => {
     let expoResponse = null;
     try {
       expoResponse = await response.json();
-    } catch {}
+    } catch { }
 
     return res.json({ sent: messages.length, expoResponse });
   } catch (e) {
     console.error(e.message);
     return res.status(500).json({ error: 'Failed to send notifications' });
+  }
+});
+
+// ==================== SELLER NOTIFICATIONS ====================
+
+// Get all seller notifications
+router.get('/seller', auth, async (req, res) => {
+  try {
+    // Only allow seller/admin roles
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const notifications = await prisma.sellernotification.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50, // Limit to recent 50
+    });
+
+    return res.json(notifications);
+  } catch (e) {
+    console.error(e.message);
+    return res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// Get unread count for badge
+router.get('/seller/unread-count', auth, async (req, res) => {
+  try {
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const count = await prisma.sellernotification.count({
+      where: { isRead: false },
+    });
+
+    return res.json({ count });
+  } catch (e) {
+    console.error(e.message);
+    return res.status(500).json({ error: 'Failed to fetch unread count' });
+  }
+});
+
+// Mark single notification as read
+router.patch('/seller/:id/read', auth, async (req, res) => {
+  try {
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid notification id' });
+
+    const updated = await prisma.sellernotification.update({
+      where: { id },
+      data: { isRead: true },
+    });
+
+    return res.json(updated);
+  } catch (e) {
+    console.error(e.message);
+    return res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+// Mark all notifications as read
+router.patch('/seller/read-all', auth, async (req, res) => {
+  try {
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    await prisma.sellernotification.updateMany({
+      where: { isRead: false },
+      data: { isRead: true },
+    });
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e.message);
+    return res.status(500).json({ error: 'Failed to mark all as read' });
+  }
+});
+
+// Delete all notifications (clear all)
+router.delete('/seller/clear-all', auth, async (req, res) => {
+  try {
+    if (Number(req.user.roleId) !== 2) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    await prisma.sellernotification.deleteMany({});
+
+    return res.json({ ok: true, message: 'All notifications cleared' });
+  } catch (e) {
+    console.error(e.message);
+    return res.status(500).json({ error: 'Failed to clear notifications' });
   }
 });
 

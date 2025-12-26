@@ -137,7 +137,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ">
         {metrics.map((metric, index) => (
           <div
             key={index}
@@ -169,8 +169,8 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => setChartView('daily')}
                 className={`px-3.5 py-1.5 text-sm rounded-xl transition-all ${chartView === 'daily'
-                    ? 'bg-[#1A2A4F] text-white shadow-sm'
-                    : 'text-[#70798B] hover:bg-gray-100'
+                  ? 'bg-[#1A2A4F] text-white shadow-sm'
+                  : 'text-[#70798B] hover:bg-gray-100'
                   }`}
               >
                 Daily
@@ -178,8 +178,8 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => setChartView('weekly')}
                 className={`px-3.5 py-1.5 text-sm rounded-xl transition-all ${chartView === 'weekly'
-                    ? 'bg-[#1A2A4F] text-white shadow-sm'
-                    : 'text-[#70798B] hover:bg-gray-100'
+                  ? 'bg-[#1A2A4F] text-white shadow-sm'
+                  : 'text-[#70798B] hover:bg-gray-100'
                   }`}
               >
                 Weekly
@@ -187,8 +187,8 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => setChartView('monthly')}
                 className={`px-3.5 py-1.5 text-sm rounded-xl transition-all ${chartView === 'monthly'
-                    ? 'bg-[#1A2A4F] text-white shadow-sm'
-                    : 'text-[#70798B] hover:bg-gray-100'
+                  ? 'bg-[#1A2A4F] text-white shadow-sm'
+                  : 'text-[#70798B] hover:bg-gray-100'
                   }`}
               >
                 Monthly

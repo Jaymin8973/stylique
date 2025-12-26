@@ -23,6 +23,7 @@ import Support from './components/pages/Support';
 import ProductDetail from './components/pages/ProductDetail';
 import OrderDetails from './components/pages/OrderDetails';
 import Login from './components/pages/Login';
+import SellerNotifications from './components/pages/SellerNotifications';
 
 // Small guard component for auth-protected routes
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -68,6 +69,7 @@ function App() {
                 <Route path="/reviews" element={<RequireAuth><Reviews /></RequireAuth>} />
                 <Route path="/support" element={<RequireAuth><Support /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+                <Route path="/seller-notifications" element={<RequireAuth><SellerNotifications /></RequireAuth>} />
               </Routes>
             </main>
           </div>

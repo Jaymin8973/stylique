@@ -12,7 +12,7 @@ interface MetricCardProps {
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, icon: Icon, trend, description }) => {
   return (
-    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-md shadow-[#C8D3FF]/40 transition-all hover:shadow-lg">
+    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-md shadow-[#C8D3FF]/40 transition-all hover:shadow-lg ">
       <div className="flex items-center justify-between">
         <div className="min-w-0 mr-4">
           <p className="text-sm font-semibold text-[#1A2A4F]/80 truncate">{title}</p>

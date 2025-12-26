@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Filter, Download, Eye, Package, Truck, CheckCircle, XCircle, ShoppingCart, DollarSign, Clock, RefreshCw } from 'lucide-react';
+import { Search, Filter, Download, Eye, Package, Truck, CheckCircle, XCircle, ShoppingCart, DollarSign, Clock, RefreshCw, FileText } from 'lucide-react';
 import { apiService, type Order } from '../../services/api';
 
 const Orders: React.FC = () => {
@@ -9,6 +9,43 @@ const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingOrderId, setDownloadingOrderId] = useState<number | null>(null);
+
+  const handleDownloadInvoice = async (orderId: number) => {
+    setDownloadingOrderId(orderId);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`http://localhost:5001/api/orders/admin/${orderId}/invoice/pdf`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download invoice');
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-order-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      alert(err.message || 'Failed to download invoice');
+    } finally {
+      setDownloadingOrderId(null);
+    }
+  };
 
   const loadOrders = async () => {
     setLoading(true);
@@ -254,6 +291,14 @@ const Orders: React.FC = () => {
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadInvoice(order.id)}
+                        disabled={downloadingOrderId === order.id}
+                        className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Download Invoice"
+                      >
+                        <FileText className={`w-4 h-4 ${downloadingOrderId === order.id ? 'animate-pulse' : ''}`} />
                       </button>
                     </td>
                   </tr>
