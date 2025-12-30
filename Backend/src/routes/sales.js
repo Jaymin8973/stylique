@@ -127,8 +127,16 @@ router.get('/', auth, async (req, res) => {
 // Public endpoint: list active sales for mobile app
 router.get('/public', async (req, res) => {
   try {
+    const now = new Date();
     const sales = await prisma.sale.findMany({
-      where: { status: 'active' },
+      where: {
+        status: 'active',
+        // Only include sales that haven't ended
+        OR: [
+          { endAt: null },
+          { endAt: { gte: now } }
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -144,7 +152,13 @@ router.get('/public', async (req, res) => {
       },
     });
 
-    return res.json(sales);
+    // Filter out sales that haven't started yet
+    const activeSales = sales.filter((sale) => {
+      if (sale.startAt && new Date(sale.startAt) > now) return false;
+      return true;
+    });
+
+    return res.json(activeSales);
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Failed to fetch sales' });
@@ -159,6 +173,7 @@ router.get('/public/:id', async (req, res) => {
       return res.status(400).json({ error: 'Invalid sale id' });
     }
 
+    const now = new Date();
     const sale = await prisma.sale.findFirst({
       where: { id, status: 'active' },
       include: {
@@ -172,6 +187,14 @@ router.get('/public/:id', async (req, res) => {
 
     if (!sale) {
       return res.status(404).json({ error: 'Sale not found' });
+    }
+
+    // Check if sale has ended or not started yet
+    if (sale.endAt && new Date(sale.endAt) < now) {
+      return res.status(404).json({ error: 'Sale has ended' });
+    }
+    if (sale.startAt && new Date(sale.startAt) > now) {
+      return res.status(404).json({ error: 'Sale has not started yet' });
     }
 
     return res.json(sale);

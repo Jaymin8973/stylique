@@ -48,11 +48,11 @@ router.get('/', async (req, res) => {
       },
       variant: ci.variant
         ? {
-            id: ci.variant.id,
-            size: ci.variant.size,
-            color: ci.variant.color,
-            price: ci.variant.price,
-          }
+          id: ci.variant.id,
+          size: ci.variant.size,
+          color: ci.variant.color,
+          price: ci.variant.price,
+        }
         : null,
     }));
 
@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
 router.post('/add', async (req, res) => {
   try {
     const userId = req.user.id;
-    const { productId, variantId, quantity } = req.body || {};
+    const { productId, variantId, quantity, salePrice } = req.body || {};
     const qty = Math.max(1, Number(quantity || 1));
 
     if (!productId) return res.status(400).json({ error: 'productId is required' });
@@ -82,7 +82,13 @@ router.post('/add', async (req, res) => {
       if (!variant) return res.status(404).json({ error: 'Variant not found' });
     }
 
-    const unitPrice = String(variant?.price ?? product.sellingPrice ?? '0');
+    // Use salePrice if provided (from sale), otherwise use variant price or product selling price
+    let unitPrice;
+    if (salePrice !== undefined && salePrice !== null && salePrice !== '') {
+      unitPrice = String(salePrice);
+    } else {
+      unitPrice = String(variant?.price ?? product.sellingPrice ?? '0');
+    }
 
     let cart = await prisma.cart.findFirst({ where: { userId } });
     if (!cart) cart = await prisma.cart.create({ data: { userId } });

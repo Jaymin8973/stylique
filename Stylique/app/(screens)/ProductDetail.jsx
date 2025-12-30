@@ -174,10 +174,18 @@ export default function ProductDetail() {
         return;
       }
       setAdding(true);
-      await API.post('/api/cart/add', {
+
+      // If product is in sale, pass the sale price
+      const cartPayload = {
         productId: Number(id),
         quantity,
-      });
+      };
+
+      if (product?.saleInfo?.salePrice) {
+        cartPayload.salePrice = product.saleInfo.salePrice;
+      }
+
+      await API.post('/api/cart/add', cartPayload);
       setInCart(true);
 
       // Fetch recommendations after adding to cart
@@ -292,8 +300,44 @@ export default function ProductDetail() {
               <View className="px-5 pt-6 pb-4 ">
                 <View className="flex-row justify-between items-start mb-3">
                   <View className="flex-1">
+                    {/* Sale Badge */}
+                    {product?.saleInfo && (
+                      <View
+                        style={{
+                          backgroundColor: '#ef4444',
+                          paddingHorizontal: 10,
+                          paddingVertical: 4,
+                          borderRadius: 8,
+                          alignSelf: 'flex-start',
+                          marginBottom: 8,
+                        }}
+                      >
+                        <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+                          {product.saleInfo.discountPercent}% OFF - {product.saleInfo.saleName}
+                        </Text>
+                      </View>
+                    )}
                     <Text className="text-2xl font-bold text-gray-900 mb-1">{product?.productName || 'Unknown Product'}</Text>
-                    <Text className="text-lg text-gray-600 font-medium">₹{product?.sellingPrice || '0.00'}</Text>
+
+                    {/* Price Display */}
+                    {product?.saleInfo ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text
+                          style={{
+                            textDecorationLine: 'line-through',
+                            color: '#9ca3af',
+                            fontSize: 16,
+                          }}
+                        >
+                          ₹{product.saleInfo.originalPrice}
+                        </Text>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#16a34a' }}>
+                          ₹{product.saleInfo.salePrice}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text className="text-lg text-gray-600 font-medium">₹{product?.sellingPrice || '0.00'}</Text>
+                    )}
                   </View>
                 </View>
 
@@ -475,8 +519,21 @@ export default function ProductDetail() {
         <View style={[styles.bottomSheet, { height: bottomSheetHeight }]}>
           <View className="flex-row items-center justify-between w-full px-6">
             <View>
-              <Text className="text-white text-sm font-medium">Price</Text>
-              <Text className="text-white text-xl font-bold">₹{(parseFloat(product?.sellingPrice || 0) * quantity).toFixed(2)}</Text>
+              <Text className="text-white text-sm font-medium">
+                {product?.saleInfo ? 'Sale Price' : 'Price'}
+              </Text>
+              {product?.saleInfo ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ textDecorationLine: 'line-through', color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                    ₹{(parseFloat(product.saleInfo.originalPrice) * quantity).toFixed(0)}
+                  </Text>
+                  <Text className="text-white text-xl font-bold">
+                    ₹{(parseFloat(product.saleInfo.salePrice) * quantity).toFixed(0)}
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-white text-xl font-bold">₹{(parseFloat(product?.sellingPrice || 0) * quantity).toFixed(2)}</Text>
+              )}
             </View>
             {inCart ? (
               <TouchableOpacity onPress={() => router.push('/(tabs)/Cart')} className="bg-white px-8 py-3 rounded-lg flex-row items-center">

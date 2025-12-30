@@ -206,47 +206,271 @@ const Home = () => {
       {sales.length > 0 && (
         (() => {
           const sale = sales[0];
-          return (
-            <>
-              <View className="flex-row items-center px-5 mt-6 justify-between">
-                <Text className="text-xl font-bold">Sale</Text>
-                <Pressable
-                  onPress={() =>
-                    router.push({
-                      pathname: '/(screens)/SaleDetail',
-                      params: { id: String(sale.id) },
-                    })
-                  }
-                >
-                  <Text className="text-xl text-gray-500">View</Text>
-                </Pressable>
-              </View>
+          const discountValue = sale.discountValue || 0;
+          const endDate = sale.endAt ? new Date(sale.endAt) : null;
+          const now = new Date();
+          const isEnding = endDate && (endDate.getTime() - now.getTime()) < 24 * 60 * 60 * 1000;
 
-              <View className="mt-4 px-5">
-                <Pressable
-                  className="mb-4"
-                  onPress={() =>
-                    router.push({
-                      pathname: '/(screens)/SaleDetail',
-                      params: { id: String(sale.id) },
-                    })
-                  }
+          // Calculate time remaining
+          const getTimeRemaining = () => {
+            if (!endDate) return null;
+            const diff = endDate.getTime() - now.getTime();
+            if (diff <= 0) return null;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            return { days, hours, mins };
+          };
+          const timeLeft = getTimeRemaining();
+
+          return (
+            <View className="mt-8 px-5">
+              {/* Sale Card */}
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/(screens)/SaleDetail',
+                    params: { id: String(sale.id) },
+                  })
+                }
+              >
+                <View
+                  style={{
+                    backgroundColor: '#1a1a2e',
+                    borderRadius: 24,
+                    overflow: 'hidden',
+                    elevation: 10,
+                    shadowColor: '#6366f1',
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 16,
+                  }}
                 >
-                  <View className="bg-white rounded-3xl overflow-hidden" style={{ elevation: 2 }}>
-                    <View style={{ borderRadius: 24, overflow: 'hidden', height: 200 }}>
-                      <Image
-                        source={{
-                          uri:
-                            sale.bannerUrl ||
-                            'https://images.unsplash.com/photo-1520975682031-569d9b3c5a73?w=600',
+                  {/* Top Section with Banner */}
+                  <View style={{ position: 'relative' }}>
+                    <Image
+                      source={{
+                        uri: sale.bannerUrl || 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800',
+                      }}
+                      style={{ width: '100%', height: 160 }}
+                    />
+
+                    {/* Gradient Overlay */}
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(26, 26, 46, 0.6)',
+                      }}
+                    />
+
+                    {/* Discount Badge - Big and Bold */}
+                    {discountValue > 0 && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: 16,
+                          right: 16,
+                          alignItems: 'center',
                         }}
-                        style={{ width: '100%', height: '100%' }}
-                      />
+                      >
+                        <View
+                          style={{
+                            backgroundColor: '#f43f5e',
+                            paddingHorizontal: 16,
+                            paddingVertical: 10,
+                            borderRadius: 16,
+                            transform: [{ rotate: '3deg' }],
+                          }}
+                        >
+                          <Text style={{ color: 'white', fontSize: 28, fontWeight: '900' }}>
+                            {discountValue}%
+                          </Text>
+                          <Text style={{ color: 'white', fontSize: 12, fontWeight: '600', textAlign: 'center' }}>
+                            OFF
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Sale Title on Banner */}
+                    <View
+                      style={{
+                        position: 'absolute',
+                        bottom: 16,
+                        left: 16,
+                        right: 80,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          marginBottom: 6,
+                        }}
+                      >
+                        <Text style={{ fontSize: 20, marginRight: 6 }}>🔥</Text>
+                        <View
+                          style={{
+                            backgroundColor: '#22c55e',
+                            paddingHorizontal: 8,
+                            paddingVertical: 3,
+                            borderRadius: 6,
+                          }}
+                        >
+                          <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>
+                            LIVE
+                          </Text>
+                        </View>
+                        {isEnding && (
+                          <View
+                            style={{
+                              backgroundColor: '#ef4444',
+                              paddingHorizontal: 8,
+                              paddingVertical: 3,
+                              borderRadius: 6,
+                              marginLeft: 6,
+                            }}
+                          >
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>
+                              ENDING SOON
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text
+                        style={{
+                          color: 'white',
+                          fontSize: 22,
+                          fontWeight: 'bold',
+                        }}
+                        numberOfLines={1}
+                      >
+                        {sale.name}
+                      </Text>
                     </View>
                   </View>
-                </Pressable>
-              </View>
-            </>
+
+                  {/* Bottom Section - Info & Timer */}
+                  <View
+                    style={{
+                      padding: 16,
+                      backgroundColor: '#16213e',
+                    }}
+                  >
+                    {/* Countdown Timer */}
+                    {timeLeft && (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: 12,
+                        }}
+                      >
+                        <Text style={{ color: '#94a3b8', fontSize: 12, marginRight: 10 }}>
+                          Ends in:
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          {/* Days */}
+                          <View
+                            style={{
+                              backgroundColor: '#1e3a5f',
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              borderRadius: 10,
+                              alignItems: 'center',
+                              minWidth: 50,
+                            }}
+                          >
+                            <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                              {timeLeft.days}
+                            </Text>
+                            <Text style={{ color: '#94a3b8', fontSize: 9 }}>DAYS</Text>
+                          </View>
+                          <Text style={{ color: '#6366f1', fontSize: 20, fontWeight: 'bold' }}>:</Text>
+                          {/* Hours */}
+                          <View
+                            style={{
+                              backgroundColor: '#1e3a5f',
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              borderRadius: 10,
+                              alignItems: 'center',
+                              minWidth: 50,
+                            }}
+                          >
+                            <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                              {String(timeLeft.hours).padStart(2, '0')}
+                            </Text>
+                            <Text style={{ color: '#94a3b8', fontSize: 9 }}>HRS</Text>
+                          </View>
+                          <Text style={{ color: '#6366f1', fontSize: 20, fontWeight: 'bold' }}>:</Text>
+                          {/* Minutes */}
+                          <View
+                            style={{
+                              backgroundColor: '#1e3a5f',
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              borderRadius: 10,
+                              alignItems: 'center',
+                              minWidth: 50,
+                            }}
+                          >
+                            <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                              {String(timeLeft.mins).padStart(2, '0')}
+                            </Text>
+                            <Text style={{ color: '#94a3b8', fontSize: 9 }}>MINS</Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Description */}
+                    {sale.description && (
+                      <Text
+                        style={{
+                          color: '#94a3b8',
+                          fontSize: 13,
+                          textAlign: 'center',
+                          marginBottom: 12,
+                        }}
+                        numberOfLines={2}
+                      >
+                        {sale.description}
+                      </Text>
+                    )}
+
+                    {/* Shop Now Button */}
+                    <View
+                      style={{
+                        backgroundColor: '#6366f1',
+                        paddingVertical: 14,
+                        borderRadius: 14,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: 'white',
+                          fontSize: 16,
+                          fontWeight: 'bold',
+                          marginRight: 8,
+                        }}
+                      >
+                        Shop Now
+                      </Text>
+                      <Text style={{ color: 'white', fontSize: 18 }}>→</Text>
+                    </View>
+                  </View>
+                </View>
+              </Pressable>
+            </View>
           );
         })()
       )}

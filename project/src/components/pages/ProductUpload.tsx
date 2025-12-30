@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Upload, Plus, Trash2, Eye, Camera } from 'lucide-react';
 import ProductApi from '../../services/productApi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 
 interface ProductImage {
   id: string;
@@ -21,6 +21,66 @@ interface ProductVariant {
   sku: string;
 }
 
+interface ProductFormData {
+  // Basic Info
+  productName: string;
+  brand: string;
+  description: string;
+  shortDescription: string;
+
+  // Pricing
+  mrp: string;
+  sellingPrice: string;
+  discount: string;
+  tax: string;
+
+  // SEO & Tags
+  metaTitle: string;
+  metaDescription: string;
+  tags: string;
+
+  // Clothing Specific
+  material: string;
+  fabric: string;
+  pattern: string;
+  collarType: string;
+  sleeveType: string;
+  fit: string;
+  occasion: string;
+  season: string;
+  careInstructions: string;
+
+  // Footwear Specific
+  footwearType: string;
+  heelHeight: string;
+  soleMaterial: string;
+  upperMaterial: string;
+  closure: string;
+
+  // Accessories Specific
+  accessoryType: string;
+  dimensions: string;
+  weight: string;
+
+  // Shipping & Returns
+  shippingWeight: string;
+  packageDimensions: string;
+  returnPolicy: string;
+  shippingClass: string;
+
+  // Inventory
+  sku: string;
+  hsn: string;
+  totalStock: string;
+  lowStockAlert: string;
+
+  // Media
+  imageUrl: string;
+
+  // Status
+  status: string;
+}
+
 const ProductUpload: React.FC = () => {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -33,9 +93,16 @@ const ProductUpload: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [submitStatus, setSubmitStatus] = useState<'draft' | 'active'>('draft');
 
-  const { register, handleSubmit: handleSubmitRHF } = useForm({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<ProductFormData>({
     defaultValues: {
       productName: '',
       brand: '',
@@ -44,74 +111,60 @@ const ProductUpload: React.FC = () => {
       mrp: '',
       sellingPrice: '',
       discount: '',
+      tax: '',
       metaTitle: '',
       metaDescription: '',
       tags: '',
-      imageUrl: '',
+      material: '',
+      fabric: '',
+      pattern: '',
+      collarType: '',
+      sleeveType: '',
+      fit: '',
+      occasion: '',
+      season: '',
+      careInstructions: '',
+      footwearType: '',
+      heelHeight: '',
+      soleMaterial: '',
+      upperMaterial: '',
+      closure: '',
+      accessoryType: '',
+      dimensions: '',
+      weight: '',
+      shippingWeight: '',
+      packageDimensions: '',
+      returnPolicy: '',
+      shippingClass: '',
       sku: '',
       hsn: '',
       totalStock: '',
+      lowStockAlert: '',
+      imageUrl: '',
+      status: 'draft',
     },
   });
 
-  const [formData, setFormData] = useState({
-    // Basic Info
-    productName: '',
-    brand: '',
-    description: '',
-    shortDescription: '',
+  // Watch form values for auto-calculation
+  const mrpValue = watch('mrp');
+  const discountValue = watch('discount');
+  const taxValue = watch('tax');
+  const sellingPrice = watch('sellingPrice');
 
-    // Pricing
-    mrp: '',
-    sellingPrice: '',
-    discount: '',
-
-    // SEO & Tags
-    metaTitle: '',
-    metaDescription: '',
-    tags: '',
-
-    // Clothing Specific
-    material: '',
-    fabric: '',
-    pattern: '',
-    collarType: '',
-    sleeveType: '',
-    fit: '',
-    occasion: '',
-    season: '',
-    careInstructions: '',
-
-    // Footwear Specific
-    footwearType: '',
-    heelHeight: '',
-    soleMaterial: '',
-    upperMaterial: '',
-    closure: '',
-
-    // Accessories Specific
-    accessoryType: '',
-    dimensions: '',
-    weight: '',
-
-    // Shipping & Returns
-    shippingWeight: '',
-    packageDimensions: '',
-    returnPolicy: '',
-    shippingClass: '',
-
-    // Inventory
-    sku: '',
-    hsn: '',
-    totalStock: '',
-    lowStockAlert: '',
-
-    // Media
-    imageUrl: '',
-
-    // Status
-    status: 'draft'
-  });
+  // Auto-calculate selling price when MRP, discount, or tax changes
+  // Formula: (MRP - discount%) + tax% = Selling Price
+  useEffect(() => {
+    const mrp = parseFloat(mrpValue) || 0;
+    const discount = parseFloat(discountValue) || 0;
+    const tax = parseFloat(taxValue) || 0;
+    if (mrp > 0) {
+      // First apply discount
+      const priceAfterDiscount = mrp - (mrp * discount / 100);
+      // Then add tax on discounted price
+      const calculatedPrice = priceAfterDiscount + (priceAfterDiscount * tax / 100);
+      setValue('sellingPrice', calculatedPrice.toFixed(2));
+    }
+  }, [mrpValue, discountValue, taxValue, setValue]);
 
   const clothingCategories = {
     men: {
@@ -150,11 +203,7 @@ const ProductUpload: React.FC = () => {
   const accessoryCategories = {
     men: ['Watches', 'Belts', 'Wallets', 'Sunglasses', 'Bags', 'Ties', 'Cufflinks', 'Caps & Hats'],
     women: ['Jewellery', 'Watches', 'Handbags', 'Sunglasses', 'Belts', 'Scarves', 'Hair Accessories', 'Makeup'],
-    unisex:['Watches', 'Belts', 'Wallets', 'Sunglasses', 'Bags', 'Ties', 'Cufflinks', 'Caps & Hats'],
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    unisex: ['Watches', 'Belts', 'Wallets', 'Sunglasses', 'Bags', 'Ties', 'Cufflinks', 'Caps & Hats'],
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,7 +235,7 @@ const ProductUpload: React.FC = () => {
       size: '',
       color: '',
       stock: 0,
-      price: parseFloat(formData.sellingPrice) || 0,
+      price: parseFloat(sellingPrice) || 0,
       sku: ''
     };
     setVariants(prev => [...prev, newVariant]);
@@ -203,46 +252,7 @@ const ProductUpload: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData(prev => ({
-      ...prev,
-      productName: '',
-      brand: '',
-      description: '',
-      shortDescription: '',
-      mrp: '',
-      sellingPrice: '',
-      discount: '',
-      metaTitle: '',
-      metaDescription: '',
-      tags: '',
-      material: '',
-      fabric: '',
-      pattern: '',
-      collarType: '',
-      sleeveType: '',
-      fit: '',
-      occasion: '',
-      season: '',
-      careInstructions: '',
-      footwearType: '',
-      heelHeight: '',
-      soleMaterial: '',
-      upperMaterial: '',
-      closure: '',
-      accessoryType: '',
-      dimensions: '',
-      weight: '',
-      shippingWeight: '',
-      packageDimensions: '',
-      returnPolicy: '',
-      shippingClass: '',
-      sku: '',
-      hsn: '',
-      totalStock: '',
-      lowStockAlert: '',
-      imageUrl: '',
-      status: 'draft'
-    }));
+    reset();
     setImages([]);
     setVariants([]);
     setCategory('');
@@ -251,12 +261,12 @@ const ProductUpload: React.FC = () => {
     setProductType('clothing');
   };
 
-  const handleSubmit = async (status: 'draft' | 'active') => {
+  const onFormSubmit = async (data: ProductFormData, status: 'draft' | 'active') => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
       // Basic client-side validation to avoid 400s from backend
-      if (!formData.sku || !String(formData.sku).trim()) {
+      if (!data.sku || !String(data.sku).trim()) {
         const toast = (await import('react-hot-toast')).toast;
         toast.error('SKU is required.');
         setIsSubmitting(false);
@@ -266,55 +276,56 @@ const ProductUpload: React.FC = () => {
       const resolvedSubcategory = subCategory || category || 'General';
 
       const payload: any = {
-        productName: formData.productName || 'Untitled Product',
-        brand: formData.brand || '',
+        productName: data.productName || 'Untitled Product',
+        brand: data.brand || '',
         productType: productType || '',
         gender: gender || '',
         category: category || 'General',
         subcategory: resolvedSubcategory,
-        mrp: String(formData.mrp || ''),
-        sellingPrice: String(formData.sellingPrice || ''),
-        discountPercent: String(formData.discount || ''),
-        sku: formData.sku || '',
-        hsnCode: formData.hsn || '',
-        totalStock: String(formData.totalStock || '0'),
-        shortDescription: formData.shortDescription || '',
-        description: formData.description || '',
-        lowStockAlert: String(formData.lowStockAlert || ''),
-        metaTitle: formData.metaTitle || '',
-        metaDescription: formData.metaDescription || '',
-        tags: formData.tags || '',
-        imageUrl: formData.imageUrl || '',
+        mrp: String(data.mrp || ''),
+        sellingPrice: String(data.sellingPrice || ''),
+        discountPercent: String(data.discount || ''),
+        taxPercent: String(data.tax || ''),
+        sku: data.sku || '',
+        hsnCode: data.hsn || '',
+        totalStock: String(data.totalStock || '0'),
+        shortDescription: data.shortDescription || '',
+        description: data.description || '',
+        lowStockAlert: String(data.lowStockAlert || ''),
+        metaTitle: data.metaTitle || '',
+        metaDescription: data.metaDescription || '',
+        tags: data.tags || '',
+        imageUrl: data.imageUrl || '',
         status: status,
 
         // Clothing
-        material: formData.material || '',
-        fabric: formData.fabric || '',
-        pattern: formData.pattern || '',
-        collarType: formData.collarType || '',
-        sleeveType: formData.sleeveType || '',
-        fit: formData.fit || '',
-        occasion: formData.occasion || '',
-        season: formData.season || '',
-        careInstructions: formData.careInstructions || '',
+        material: data.material || '',
+        fabric: data.fabric || '',
+        pattern: data.pattern || '',
+        collarType: data.collarType || '',
+        sleeveType: data.sleeveType || '',
+        fit: data.fit || '',
+        occasion: data.occasion || '',
+        season: data.season || '',
+        careInstructions: data.careInstructions || '',
 
         // Footwear
-        footwearType: formData.footwearType || '',
-        heelHeight: formData.heelHeight || '',
-        soleMaterial: formData.soleMaterial || '',
-        upperMaterial: formData.upperMaterial || '',
-        closure: formData.closure || '',
+        footwearType: data.footwearType || '',
+        heelHeight: data.heelHeight || '',
+        soleMaterial: data.soleMaterial || '',
+        upperMaterial: data.upperMaterial || '',
+        closure: data.closure || '',
 
         // Accessories
-        accessoryType: formData.accessoryType || '',
-        dimensions: formData.dimensions || '',
-        weight: formData.weight || '',
+        accessoryType: data.accessoryType || '',
+        dimensions: data.dimensions || '',
+        weight: data.weight || '',
 
         // Shipping & returns
-        shippingWeight: formData.shippingWeight || '',
-        packageDimensions: formData.packageDimensions || '',
-        returnPolicy: formData.returnPolicy || '',
-        shippingClass: formData.shippingClass || '',
+        shippingWeight: data.shippingWeight || '',
+        packageDimensions: data.packageDimensions || '',
+        returnPolicy: data.returnPolicy || '',
+        shippingClass: data.shippingClass || '',
 
         // Nested
         images: images.map(i => ({ url: i.url, isPrimary: !!i.isPrimary })),
@@ -360,8 +371,8 @@ const ProductUpload: React.FC = () => {
         setCategory(p.category || '');
         setSubCategory(p.subcategory || '');
 
-        setFormData(prev => ({
-          ...prev,
+        // Reset form with fetched data
+        reset({
           productName: p.productName || '',
           brand: p.brand || '',
           description: p.description || '',
@@ -369,6 +380,7 @@ const ProductUpload: React.FC = () => {
           mrp: p.mrp || '',
           sellingPrice: p.sellingPrice || '',
           discount: p.discountPercent || '',
+          tax: p.taxPercent || '',
           metaTitle: p.metaTitle || '',
           metaDescription: p.metaDescription || '',
           tags: p.tags || '',
@@ -404,7 +416,7 @@ const ProductUpload: React.FC = () => {
           shippingClass: p.shippingClass || '',
           // Status
           status: p.status || 'draft',
-        }));
+        });
 
         // Images
         if (Array.isArray(p.images)) {
@@ -432,7 +444,7 @@ const ProductUpload: React.FC = () => {
       }
     };
     fetchAndFill();
-  }, [isEdit, id]);
+  }, [isEdit, id, reset]);
 
   const getCurrentCategories = () => {
     if (productType === 'clothing') return clothingCategories[gender as keyof typeof clothingCategories];
@@ -459,10 +471,6 @@ const ProductUpload: React.FC = () => {
     }
   };
 
-  const onValidSubmit = async () => {
-    await handleSubmit(submitStatus);
-  };
-
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white">
       <div className="mb-8">
@@ -470,7 +478,7 @@ const ProductUpload: React.FC = () => {
         <p className="text-gray-600">{isEdit ? 'Update product details' : 'Create a new product listing for your marketplace'}</p>
       </div>
 
-      <form className="space-y-8" onSubmit={handleSubmitRHF(onValidSubmit)}>
+      <form className="space-y-8" onSubmit={handleSubmit((data) => onFormSubmit(data, 'active'))}>
         {/* Product Type Selection */}
         <div className="bg-gray-50 p-6 rounded-lg">
           <h2 className="text-xl font-semibold mb-4">Product Type & Category</h2>
@@ -553,32 +561,29 @@ const ProductUpload: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
               <input
                 type="text"
-                {...register('productName', { required: true, onChange: (e) => handleInputChange('productName', e.target.value) })}
-                value={formData.productName}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                {...register('productName', { required: 'Product name is required' })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.productName ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Enter product name"
-                required
               />
+              {errors.productName && <p className="text-red-500 text-sm mt-1">{errors.productName.message}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Brand *</label>
               <input
                 type="text"
-                {...register('brand', { required: true, onChange: (e) => handleInputChange('brand', e.target.value) })}
-                value={formData.brand}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                {...register('brand', { required: 'Brand is required' })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.brand ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Enter brand name"
-                required
               />
+              {errors.brand && <p className="text-red-500 text-sm mt-1">{errors.brand.message}</p>}
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Short Description</label>
               <input
                 type="text"
-                value={formData.shortDescription}
-                onChange={(e) => handleInputChange('shortDescription', e.target.value)}
+                {...register('shortDescription')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Brief product description (max 160 characters)"
                 maxLength={160}
@@ -588,21 +593,19 @@ const ProductUpload: React.FC = () => {
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Description *</label>
               <textarea
-                {...register('description', { required: true, onChange: (e) => handleInputChange('description', e.target.value) })}
-                value={formData.description}
+                {...register('description', { required: 'Description is required' })}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Detailed product description"
-                required
               />
+              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
               <input
                 type="url"
-                {...register('imageUrl', { onChange: (e) => handleInputChange('imageUrl', e.target.value) })}
-                value={formData.imageUrl}
+                {...register('imageUrl')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="https://example.com/image.jpg"
               />
@@ -676,41 +679,57 @@ const ProductUpload: React.FC = () => {
         {/* Pricing */}
         <div className="bg-gray-50 p-6 rounded-lg">
           <h2 className="text-xl font-semibold mb-4">Pricing</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">MRP (₹) *</label>
               <input
                 type="number"
-                {...register('mrp', { required: true, onChange: (e) => handleInputChange('mrp', e.target.value) })}
-                value={formData.mrp}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                {...register('mrp', { required: 'MRP is required' })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.mrp ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="0"
-                required
               />
-            </div>
-
-            <div>
-              <label className="block text sm font-medium text-gray-700 mb-2">Selling Price (₹) *</label>
-              <input
-                type="number"
-                {...register('sellingPrice', { required: true, onChange: (e) => handleInputChange('sellingPrice', e.target.value) })}
-                value={formData.sellingPrice}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
-                required
-              />
+              {errors.mrp && <p className="text-red-500 text-sm mt-1">{errors.mrp.message}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Discount (%)</label>
               <input
                 type="number"
-                {...register('discount', { onChange: (e) => handleInputChange('discount', e.target.value) })}
-                value={formData.discount}
+                {...register('discount')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
-                max="100"
+                min={0}
+                max={100}
               />
+            </div>
+
+
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tax / GST (%)</label>
+              <input
+                type="number"
+                {...register('tax')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., 5, 12, 18"
+                min={0}
+                max={100}
+              />
+            </div>
+
+
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Selling Price (₹) *</label>
+              <input
+                type="number"
+                {...register('sellingPrice', { required: 'Selling price is required' })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 ${errors.sellingPrice ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder="Auto-calculated"
+                readOnly
+              />
+              {errors.sellingPrice && <p className="text-red-500 text-sm mt-1">{errors.sellingPrice.message}</p>}
+
             </div>
           </div>
         </div>
@@ -724,8 +743,7 @@ const ProductUpload: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Material</label>
                 <input
                   type="text"
-                  value={formData.material}
-                  onChange={(e) => handleInputChange('material', e.target.value)}
+                  {...register('material')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Cotton, Polyester"
                 />
@@ -735,8 +753,7 @@ const ProductUpload: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Fabric</label>
                 <input
                   type="text"
-                  value={formData.fabric}
-                  onChange={(e) => handleInputChange('fabric', e.target.value)}
+                  {...register('fabric')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Denim, Silk"
                 />
@@ -745,8 +762,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Pattern</label>
                 <select
-                  value={formData.pattern}
-                  onChange={(e) => handleInputChange('pattern', e.target.value)}
+                  {...register('pattern')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Pattern</option>
@@ -763,8 +779,7 @@ const ProductUpload: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Collar Type</label>
                   <select
-                    value={formData.collarType}
-                    onChange={(e) => handleInputChange('collarType', e.target.value)}
+                    {...register('collarType')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Collar</option>
@@ -781,8 +796,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Sleeve Type</label>
                 <select
-                  value={formData.sleeveType}
-                  onChange={(e) => handleInputChange('sleeveType', e.target.value)}
+                  {...register('sleeveType')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Sleeve</option>
@@ -796,8 +810,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Fit</label>
                 <select
-                  value={formData.fit}
-                  onChange={(e) => handleInputChange('fit', e.target.value)}
+                  {...register('fit')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Fit</option>
@@ -812,8 +825,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Occasion</label>
                 <select
-                  value={formData.occasion}
-                  onChange={(e) => handleInputChange('occasion', e.target.value)}
+                  {...register('occasion')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Occasion</option>
@@ -829,8 +841,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Season</label>
                 <select
-                  value={formData.season}
-                  onChange={(e) => handleInputChange('season', e.target.value)}
+                  {...register('season')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Season</option>
@@ -844,8 +855,7 @@ const ProductUpload: React.FC = () => {
               <div className="md:col-span-2 lg:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Care Instructions</label>
                 <textarea
-                  value={formData.careInstructions}
-                  onChange={(e) => handleInputChange('careInstructions', e.target.value)}
+                  {...register('careInstructions')}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Machine wash cold, Do not bleach"
@@ -863,8 +873,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Heel Height</label>
                 <select
-                  value={formData.heelHeight}
-                  onChange={(e) => handleInputChange('heelHeight', e.target.value)}
+                  {...register('heelHeight')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Height</option>
@@ -880,8 +889,7 @@ const ProductUpload: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Sole Material</label>
                 <input
                   type="text"
-                  value={formData.soleMaterial}
-                  onChange={(e) => handleInputChange('soleMaterial', e.target.value)}
+                  {...register('soleMaterial')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Rubber, Leather"
                 />
@@ -891,8 +899,7 @@ const ProductUpload: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Upper Material</label>
                 <input
                   type="text"
-                  value={formData.upperMaterial}
-                  onChange={(e) => handleInputChange('upperMaterial', e.target.value)}
+                  {...register('upperMaterial')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Leather, Canvas"
                 />
@@ -901,8 +908,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Closure</label>
                 <select
-                  value={formData.closure}
-                  onChange={(e) => handleInputChange('closure', e.target.value)}
+                  {...register('closure')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Closure</option>
@@ -925,8 +931,7 @@ const ProductUpload: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Accessory Type</label>
                 <select
-                  value={formData.accessoryType}
-                  onChange={(e) => handleInputChange('accessoryType', e.target.value)}
+                  {...register('accessoryType')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Type</option>
@@ -940,8 +945,7 @@ const ProductUpload: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Dimensions</label>
                 <input
                   type="text"
-                  value={formData.dimensions}
-                  onChange={(e) => handleInputChange('dimensions', e.target.value)}
+                  {...register('dimensions')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., 10cm x 5cm x 2cm"
                 />
@@ -951,8 +955,7 @@ const ProductUpload: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Weight (grams)</label>
                 <input
                   type="number"
-                  value={formData.weight}
-                  onChange={(e) => handleInputChange('weight', e.target.value)}
+                  {...register('weight')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
                 />
@@ -1046,20 +1049,18 @@ const ProductUpload: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">SKU *</label>
               <input
                 type="text"
-                value={formData.sku}
-                onChange={(e) => handleInputChange('sku', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                {...register('sku', { required: 'SKU is required' })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.sku ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Product SKU"
-                required
               />
+              {errors.sku && <p className="text-red-500 text-sm mt-1">{errors.sku.message}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">HSN Code</label>
               <input
                 type="text"
-                value={formData.hsn}
-                onChange={(e) => handleInputChange('hsn', e.target.value)}
+                {...register('hsn')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="HSN Code"
               />
@@ -1069,8 +1070,7 @@ const ProductUpload: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Low Stock Alert</label>
               <input
                 type="number"
-                value={formData.lowStockAlert}
-                onChange={(e) => handleInputChange('lowStockAlert', e.target.value)}
+                {...register('lowStockAlert')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="5"
               />
@@ -1080,8 +1080,7 @@ const ProductUpload: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Total Stock</label>
               <input
                 type="number"
-                value={formData.totalStock}
-                onChange={(e) => handleInputChange('totalStock', e.target.value)}
+                {...register('totalStock')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="10"
               />
@@ -1097,8 +1096,7 @@ const ProductUpload: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
               <input
                 type="text"
-                value={formData.metaTitle}
-                onChange={(e) => handleInputChange('metaTitle', e.target.value)}
+                {...register('metaTitle')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="SEO title for search engines"
                 maxLength={60}
@@ -1108,8 +1106,7 @@ const ProductUpload: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
               <textarea
-                value={formData.metaDescription}
-                onChange={(e) => handleInputChange('metaDescription', e.target.value)}
+                {...register('metaDescription')}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="SEO description for search engines"
@@ -1121,8 +1118,7 @@ const ProductUpload: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
               <input
                 type="text"
-                value={formData.tags}
-                onChange={(e) => handleInputChange('tags', e.target.value)}
+                {...register('tags')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Comma-separated tags (e.g., casual, cotton, summer)"
               />
@@ -1135,15 +1131,14 @@ const ProductUpload: React.FC = () => {
           <div className="flex items-center space-x-4">
             <button
               type="button"
-              onClick={() => handleSubmit(isEdit ? 'draft' : 'draft')}
+              onClick={handleSubmit((data) => onFormSubmit(data, 'draft'))}
               disabled={isSubmitting}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
             >
               {isSubmitting ? (isEdit ? 'Saving...' : 'Saving...') : (isEdit ? 'Save Changes' : 'Save as Draft')}
             </button>
             <button
-              type="button"
-              onClick={() => handleSubmit('active')}
+              type="submit"
               disabled={isSubmitting}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
             >

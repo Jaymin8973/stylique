@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Percent, Image as ImageIcon } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Percent, Image as ImageIcon, Search, X, Check, Filter } from 'lucide-react';
 import ProductApi from '../../services/productApi';
 import SaleApi, { type SalePayload } from '../../services/saleApi';
 import type { Product } from '../../services/api';
@@ -17,6 +17,10 @@ const Sales: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Product selection enhancements
+  const [productSearch, setProductSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +79,41 @@ const Sales: React.FC = () => {
     loadSales();
   }, []);
 
+  // Get unique categories from products
+  const categories = useMemo(() => {
+    const cats = products.map((p) => p.category).filter((c) => c && c.trim() !== '');
+    return ['all', ...Array.from(new Set(cats))];
+  }, [products]);
+
+  // Filter products based on search and category
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch = productSearch.trim() === '' ||
+        p.name.toLowerCase().includes(productSearch.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, productSearch, categoryFilter]);
+
   const toggleProduct = (id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  // Select all visible (filtered) products
+  const selectAllVisible = () => {
+    const visibleIds = filteredProducts.map((p) => p.id as number);
+    setSelectedIds((prev) => {
+      const combined = new Set([...prev, ...visibleIds]);
+      return Array.from(combined);
+    });
+  };
+
+  // Deselect all visible (filtered) products
+  const deselectAllVisible = () => {
+    const visibleIds = new Set(filteredProducts.map((p) => p.id as number));
+    setSelectedIds((prev) => prev.filter((id) => !visibleIds.has(id)));
   };
 
   const handleBannerFileChange = async (
@@ -318,42 +353,188 @@ const Sales: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* Header with title and selected count */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Apply to products</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-700">Select Products</span>
+              {selectedIds.length > 0 && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                  {selectedIds.length} selected
+                </span>
+              )}
+            </div>
             {loadingProducts && (
               <span className="text-xs text-gray-400">Loading products...</span>
             )}
           </div>
 
-          <div className="border border-dashed border-gray-300 rounded-lg p-3 max-h-64 overflow-y-auto bg-gray-50">
-            {products.length === 0 && !loadingProducts && (
-              <p className="text-sm text-gray-500">
-                No products loaded yet. Add products first from the Products / Upload Product pages.
-              </p>
-            )}
-            {products.map((p) => {
-              const selected = selectedIds.includes(p.id as number);
-              return (
+          {/* Search and Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                placeholder="Search products by name..."
+                className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              {productSearch && (
                 <button
-                  key={p.id}
                   type="button"
-                  onClick={() => toggleProduct(p.id as number)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm mb-1 transition-colors ${
-                    selected
-                      ? 'bg-indigo-50 border border-indigo-300 text-indigo-700'
-                      : 'bg-white border border-gray-200 text-gray-800 hover:bg-gray-50'
-                  }`}
+                  onClick={() => setProductSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  <span className="truncate mr-2">{p.name}</span>
-                  {selected && (
-                    <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-indigo-600 text-white">
-                      Selected
-                    </span>
-                  )}
+                  <X className="h-4 w-4" />
                 </button>
-              );
-            })}
+              )}
+            </div>
+
+            {/* Category Filter */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[150px]"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat === 'all' ? 'All Categories' : cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Bulk Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={selectAllVisible}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+            >
+              <Check className="h-3.5 w-3.5" />
+              Select All ({filteredProducts.length})
+            </button>
+            <button
+              type="button"
+              onClick={deselectAllVisible}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+              Deselect All
+            </button>
+            {productSearch || categoryFilter !== 'all' ? (
+              <span className="text-xs text-gray-500">
+                Showing {filteredProducts.length} of {products.length} products
+              </span>
+            ) : null}
+          </div>
+
+          {/* Product Grid */}
+          <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+            <div className="max-h-80 overflow-y-auto p-3">
+              {products.length === 0 && !loadingProducts && (
+                <div className="text-center py-8">
+                  <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">
+                    No products loaded yet. Add products first from the Products page.
+                  </p>
+                </div>
+              )}
+
+              {filteredProducts.length === 0 && products.length > 0 && (
+                <div className="text-center py-8">
+                  <Search className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">
+                    No products match your search or filter.
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredProducts.map((p) => {
+                  const selected = selectedIds.includes(p.id as number);
+                  const originalPrice = Number(p.price) || 0;
+                  const discountNum = parseFloat(discountValue) || 0;
+                  const discountedPrice = discountNum > 0
+                    ? (originalPrice - (originalPrice * discountNum / 100)).toFixed(0)
+                    : originalPrice.toFixed(0);
+                  const hasDiscount = discountNum > 0 && selected;
+
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleProduct(p.id as number)}
+                      className={`relative flex items-start gap-3 p-3 rounded-xl text-left transition-all duration-200 ${selected
+                          ? 'bg-white ring-2 ring-indigo-500 shadow-md'
+                          : 'bg-white border border-gray-200 hover:border-indigo-300 hover:shadow-sm'
+                        }`}
+                    >
+                      {/* Selection indicator */}
+                      <div
+                        className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all ${selected
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-200 text-transparent'
+                          }`}
+                      >
+                        <Check className="h-3 w-3" />
+                      </div>
+
+                      {/* Product Image */}
+                      <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100">
+                        {p.image_url ? (
+                          <img
+                            src={p.image_url}
+                            alt={p.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-6 w-6 text-gray-300" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Product Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 truncate pr-6">
+                          {p.name}
+                        </h4>
+                        {p.category && (
+                          <span className="inline-block text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mt-1">
+                            {p.category}
+                          </span>
+                        )}
+                        <div className="mt-1.5 flex items-center gap-2">
+                          {hasDiscount ? (
+                            <>
+                              <span className="text-xs line-through text-gray-400">
+                                ₹{originalPrice.toFixed(0)}
+                              </span>
+                              <span className="text-sm font-semibold text-green-600">
+                                ₹{discountedPrice}
+                              </span>
+                              <span className="text-[9px] font-medium text-white bg-green-500 px-1.5 py-0.5 rounded-full">
+                                {discountNum}% OFF
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-sm font-medium text-gray-700">
+                              ₹{originalPrice.toFixed(0)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -418,6 +599,31 @@ const Sales: React.FC = () => {
                   const created = sale.createdAt
                     ? new Date(sale.createdAt).toLocaleDateString()
                     : '';
+
+                  // Compute actual status based on dates
+                  const now = new Date();
+                  let displayStatus = sale.status;
+                  let statusColor = 'bg-gray-100 text-gray-700';
+                  let statusLabel = 'Draft';
+
+                  if (sale.status === 'active') {
+                    const endAt = sale.endAt ? new Date(sale.endAt) : null;
+                    const startAt = sale.startAt ? new Date(sale.startAt) : null;
+
+                    if (endAt && endAt < now) {
+                      displayStatus = 'ended';
+                      statusColor = 'bg-red-100 text-red-800';
+                      statusLabel = 'Ended';
+                    } else if (startAt && startAt > now) {
+                      displayStatus = 'upcoming';
+                      statusColor = 'bg-blue-100 text-blue-800';
+                      statusLabel = 'Upcoming';
+                    } else {
+                      statusColor = 'bg-green-100 text-green-800';
+                      statusLabel = 'Active';
+                    }
+                  }
+
                   return (
                     <tr key={sale.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2">
@@ -428,13 +634,9 @@ const Sales: React.FC = () => {
                       </td>
                       <td className="px-4 py-2">
                         <span
-                          className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
-                            sale.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}
+                          className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${statusColor}`}
                         >
-                          {sale.status === 'active' ? 'Active' : 'Draft'}
+                          {statusLabel}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-gray-700">

@@ -12,6 +12,12 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { status: null },
+          { status: { not: 'deleted' } }
+        ]
+      },
       orderBy: { id: 'desc' },
       include: {
         productimage: true,
@@ -32,6 +38,12 @@ router.get('/', async (req, res) => {
 router.get('/all', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { status: null },
+          { status: { not: 'deleted' } }
+        ]
+      },
       orderBy: { id: 'desc' },
       include: {
         productimage: true,
@@ -111,10 +123,50 @@ router.get('/pid/:id', async (req, res) => {
         clothingdetail: true,
         footweardetail: true,
         accessorydetail: true,
+        saleproduct: {
+          include: {
+            sale: true,
+          },
+        },
       },
     });
     if (!product) return res.status(404).json({ error: 'Product not found' });
-    res.json(product);
+
+    // Check if product is in an active sale (status = active AND not past end date)
+    let saleInfo = null;
+    if (product.saleproduct && product.saleproduct.length > 0) {
+      const now = new Date();
+      const activeSale = product.saleproduct.find((sp) => {
+        if (!sp.sale || sp.sale.status !== 'active') return false;
+        // Check if sale has ended
+        if (sp.sale.endAt && new Date(sp.sale.endAt) < now) return false;
+        // Check if sale has started (optional)
+        if (sp.sale.startAt && new Date(sp.sale.startAt) > now) return false;
+        return true;
+      });
+      if (activeSale && activeSale.sale) {
+        const discountPercent = parseFloat(activeSale.sale.discountValue) || 0;
+        const originalPrice = parseFloat(product.sellingPrice) || 0;
+        const discountedPrice = originalPrice - (originalPrice * discountPercent / 100);
+
+        saleInfo = {
+          saleId: activeSale.sale.id,
+          saleName: activeSale.sale.name,
+          discountPercent: discountPercent,
+          salePrice: discountedPrice.toFixed(0),
+          originalPrice: originalPrice.toFixed(0),
+        };
+      }
+    }
+
+    // Remove saleproduct from response and add saleInfo
+    const { saleproduct, ...productData } = product;
+    const response = {
+      ...productData,
+      saleInfo,
+    };
+
+    res.json(response);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch product' });
@@ -381,11 +433,27 @@ router.delete('/:id', auth, async (req, res) => {
     const id = Number(req.params.id);
     const owned = await prisma.product.findFirst({ where: { id } });
     if (!owned) return res.status(404).json({ error: 'Product not found' });
-    await prisma.product.delete({ where: { id } });
-    res.json({ success: true });
+
+    // Check if product has order items (has been ordered)
+    const orderItemCount = await prisma.orderitem.count({
+      where: { productId: id }
+    });
+
+    if (orderItemCount > 0) {
+      // Product has been ordered - soft delete by setting status to 'deleted'
+      await prisma.product.update({
+        where: { id },
+        data: { status: 'deleted' }
+      });
+      res.json({ success: true, softDeleted: true, message: 'Product marked as deleted (has order history)' });
+    } else {
+      // No orders - can safely hard delete
+      await prisma.product.delete({ where: { id } });
+      res.json({ success: true, message: 'Product deleted successfully' });
+    }
   } catch (e) {
     console.error(e);
-    res.status(400).json({ error: 'Failed to delete product' });
+    res.status(400).json({ error: 'Failed to delete product', details: e?.message });
   }
 });
 
