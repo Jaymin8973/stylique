@@ -8,8 +8,10 @@ import * as SecureStore from 'expo-secure-store';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
 import * as Yup from 'yup';
-import API from '../../Api';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { useAuth } from '../../hooks/useAuth';
 
 const Signup = () => {
   const router = useRouter();
@@ -19,6 +21,7 @@ const Signup = () => {
   const [ConfirmPassword, setConfirmPassword] = useState("");
   const [visible, setVisible] = useState(true);
   const [Loading, setLoading] = useState(false);
+  const { register } = useAuth();
 
   const validationSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -38,7 +41,7 @@ const Signup = () => {
       const lastname = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
       try {
         setLoading(true);
-        const result = await API.post(`/api/auth/register`, {
+        const result = await register({
           name: values.name,
           firstname,
           lastname,
@@ -46,8 +49,8 @@ const Signup = () => {
           password: values.password,
         });
 
-        const token = result.data.token;
-        const userId = String(result.data.user.id);
+        const token = result.token;
+        const userId = String(result.user.id);
         await AsyncStorage.setItem('userToken', token);
         await SecureStore.setItemAsync('userId', userId);
         Toast.show({

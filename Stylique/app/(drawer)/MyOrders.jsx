@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import API from '../../Api';
+import { useOrders } from '../../hooks/useOrders';
 import { THEME } from '../../constants/Theme';
 import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
 import { ScrollView } from 'react-native';
@@ -73,32 +73,14 @@ const EmptyState = () => (
 
 export default function MyOrders() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState([]);
+  /* Removed local loading and orders state */
   const [activeTab, setActiveTab] = useState('all');
 
-  const loadOrders = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (activeTab !== 'all') {
-        params.append('status', activeTab);
-      }
+  const { orders, isLoading: loading, refetch } = useOrders(activeTab);
 
-      const res = await API.get(`/api/orders?${params.toString()}`);
+  /* Removed loadOrders function */
 
-      setOrders(res.data || []);
-    } catch (e) {
-      console.error(e);
-      // Handle error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadOrders();
-  }, [activeTab]);
+  /* Removed useEffect for loadOrders as useOrders handles it based on activeTab */
 
   const handleOrderPress = (order) => {
     router.push({ pathname: 'OrderSummary', params: { id: String(order.id) } });

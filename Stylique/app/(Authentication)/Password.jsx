@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFormik } from 'formik';
 import { useState } from 'react';
@@ -7,7 +6,8 @@ import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import PasswordChangedPopup from "./PasswordChangedPopup";
-import IpAddress from '../../Config.json';
+
+import { useAuth } from '../../hooks/useAuth';
 
 const Password = () => {
   const params = useLocalSearchParams();
@@ -16,6 +16,8 @@ const Password = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+
+  const { resetPassword } = useAuth();
 
   const ValidationSchema = yup.object().shape({
     newPassword: yup
@@ -31,9 +33,7 @@ const Password = () => {
       .required('Please confirm your password')
   });
 
-  const API = axios.create({
-    baseURL: `http://${IpAddress.IpAddress}:5001`,
-  });
+
 
   const formik = useFormik({
     initialValues: {
@@ -43,8 +43,7 @@ const Password = () => {
     validationSchema: ValidationSchema,
     onSubmit: async values => {
       try {
-        const response = await API.patch(
-          'api/user/resetPassword',
+        const response = await resetPassword(
           { newPassword: values.newPassword, email: email }
         );
 

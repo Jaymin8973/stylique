@@ -1,46 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API from '../../../Api';
+import { useCart } from '../../../hooks/useCart';
 
 
 const Cart = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState([]);
-  const [subtotal, setSubtotal] = useState(0);
+  const { cartItems: items, isLoading: loading, updateQuantity, removeFromCart } = useCart();
 
-  const fetchCart = async () => {
-    try {
-      setLoading(true);
-      const res = await API.get('/api/cart');
-      setItems(res.data.items || []);
-      setSubtotal(res.data.subtotal || 0);
-    } catch (e) {
-      Toast.show({ type: 'error', text1: 'Failed to load cart' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const ensureLoggedInAndFetch = async () => {
-    const token = await AsyncStorage.getItem('userToken');
-    if (!token) {
-      router.push('/(Authentication)/Login');
-      return;
-    }
-    await fetchCart();
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      ensureLoggedInAndFetch();
-    }, [])
-  );
+  // Calculate subtotal from items provided by hook
+  const subtotal = items.reduce((sum, it) => sum + (parseFloat(it.unitPrice || '0') * it.quantity), 0);
 
   const handleCheckout = async () => {
     const token = await AsyncStorage.getItem('userToken');
@@ -54,16 +27,12 @@ const Cart = () => {
   const updateQty = async (itemId, qty) => {
     try {
       if (qty <= 0) {
-        await API.delete(`/api/cart/item/${itemId}`);
-        setItems((prev) => prev.filter((i) => i.id !== itemId));
+        await removeFromCart(itemId);
       } else {
-        const res = await API.patch(`/api/cart/item/${itemId}`, { quantity: qty });
-        setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, quantity: res.data.quantity } : i)));
+        await updateQuantity({ itemId, quantity: qty });
       }
-      const newSubtotal = items.reduce((sum, it) => sum + (it.id === itemId ? (qty <= 0 ? 0 : parseFloat(it.unitPrice || '0') * qty) : parseFloat(it.unitPrice || '0') * it.quantity), 0);
-      setSubtotal(newSubtotal);
     } catch (e) {
-      Toast.show({ type: 'error', text1: 'Failed to update item' });
+      // Toast handles error in hook
     }
   };
 

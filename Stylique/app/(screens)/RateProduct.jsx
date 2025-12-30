@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { ActivityIndicator, ScrollView, Text, TextInput, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import API from '../../Api';
+import { useProducts } from '../../hooks/useProducts';
 import { THEME } from '../../constants/Theme';
 import { ThemedButton, ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
 
@@ -21,11 +21,13 @@ const RateProduct = () => {
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+
 
   const handleSelectStar = (value) => {
     setRating(value);
   };
+
+  const { submitRating, isSubmittingRating } = useProducts();
 
   const handleSubmit = async () => {
     if (!productId) {
@@ -38,18 +40,18 @@ const RateProduct = () => {
     }
 
     try {
-      setSubmitting(true);
-      await API.post(`/rating/${productId}`, {
+      await submitRating({
+        productId,
         rating,
         comment: comment.trim() || null,
       });
       Toast.show({ type: 'success', text1: 'Review submitted' });
       router.back();
     } catch (e) {
+      // Toast shown in hook if we added error handling there, 
+      // but here we catch re-thrown error or handle UI specific message
       const msg = e?.response?.data?.error || 'Failed to submit review';
       Toast.show({ type: 'error', text1: msg });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -134,9 +136,9 @@ const RateProduct = () => {
           </View>
 
           <ThemedButton
-            title={submitting ? 'Submitting...' : 'Submit Review'}
+            title={isSubmittingRating ? 'Submitting...' : 'Submit Review'}
             onPress={handleSubmit}
-            disabled={submitting}
+            disabled={isSubmittingRating}
           />
         </ThemedSection>
       </ScrollView>

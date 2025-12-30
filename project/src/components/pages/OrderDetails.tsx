@@ -1,21 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, Package, Truck, CheckCircle, XCircle, Clock, MapPin,
     User, Mail, Phone, CreditCard, Calendar, DollarSign, FileText,
     Download, Printer, RefreshCw, Edit
 } from 'lucide-react';
-import { apiService, type Order } from '../../services/api';
+
+import { useOrders } from '../../hooks/useOrders';
 
 const OrderDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [order, setOrder] = useState<Order | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+
+    // Hooks
+    const { useOrder, updateStatus, shipOrder, isUpdating: isStatusUpdating, isShipping: isOrderShipping, downloadInvoice } = useOrders();
+    const { data: order, isLoading: loading, error: queryError, refetch } = useOrder(Number(id));
+    const error = queryError ? (queryError as Error).message : null;
+
+    // Local UI state
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState('');
-    const [updating, setUpdating] = useState(false);
+    const [showShipModal, setShowShipModal] = useState(false);
+    const [shippingDetails, setShippingDetails] = useState({ courier: '', trackingNumber: '' });
+
+    const handleShipOrder = async () => {
+        if (!shippingDetails.courier || !shippingDetails.trackingNumber || !id) return;
+
+        try {
+            await shipOrder({
+                id: Number(id),
+                details: shippingDetails
+            });
+            setShowShipModal(false);
+            setShippingDetails({ courier: '', trackingNumber: '' });
+            // Toast handled by hook
+        } catch (err: any) {
+            // Toast handled by hook
+        }
+    };
+
     const [downloading, setDownloading] = useState(false);
 
     const handleDownloadInvoice = async () => {
@@ -23,30 +46,12 @@ const OrderDetails: React.FC = () => {
 
         setDownloading(true);
         try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch(`http://localhost:5001/api/orders/admin/${id}/invoice/pdf`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to download invoice');
-            }
-
-            // Get the PDF blob
-            const blob = await response.blob();
-
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
+            const url = await downloadInvoice(Number(id));
             const a = document.createElement('a');
             a.href = url;
             a.download = `invoice-order-${id}.pdf`;
             document.body.appendChild(a);
             a.click();
-
-            // Cleanup
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (err: any) {
@@ -270,60 +275,86 @@ const OrderDetails: React.FC = () => {
         printWindow.document.close();
     };
 
-    useEffect(() => {
-        loadOrderDetails();
-    }, [id]);
 
-    const loadOrderDetails = async () => {
-        if (!id) return;
-        setLoading(true);
-        setError(null);
-        try {
-            const orders = await apiService.getOrders();
-            const foundOrder = orders.find(o => o.id === Number(id));
-            if (foundOrder) {
-                setOrder(foundOrder);
-            } else {
-                setError('Order not found');
-            }
-        } catch (err: any) {
-            setError(err?.message || 'Failed to load order details');
-        } finally {
-            setLoading(false);
-        }
-    };
 
+    /**
+     * Status ke icon return karta hai
+     * Har status ka apna icon hai
+     */
     const getStatusIcon = (status: string) => {
         switch (status) {
+            case 'pending': return <Clock className="w-5 h-5" />;
+            case 'confirmed': return <CheckCircle className="w-5 h-5" />;
             case 'processing': return <Package className="w-5 h-5" />;
             case 'shipped': return <Truck className="w-5 h-5" />;
+            case 'out_for_delivery': return <Truck className="w-5 h-5" />;
             case 'delivered': return <CheckCircle className="w-5 h-5" />;
             case 'cancelled': return <XCircle className="w-5 h-5" />;
-            case 'pending': return <Clock className="w-5 h-5" />;
+            case 'return_requested': return <RefreshCw className="w-5 h-5" />;
+            case 'return_approved': return <RefreshCw className="w-5 h-5" />;
+            case 'return_picked': return <Truck className="w-5 h-5" />;
+            case 'refunded': return <DollarSign className="w-5 h-5" />;
             default: return <Package className="w-5 h-5" />;
         }
     };
 
+    /**
+     * Status ke color classes return karta hai
+     */
     const getStatusColor = (status: string) => {
         switch (status) {
+            case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
             case 'processing': return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'shipped': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'shipped': return 'bg-purple-100 text-purple-800 border-purple-200';
+            case 'out_for_delivery': return 'bg-orange-100 text-orange-800 border-orange-200';
             case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
             case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-            case 'pending': return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'return_requested': return 'bg-amber-100 text-amber-800 border-amber-200';
+            case 'return_approved': return 'bg-orange-100 text-orange-800 border-orange-200';
+            case 'return_picked': return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'refunded': return 'bg-gray-100 text-gray-800 border-gray-200';
             default: return 'bg-gray-100 text-gray-800 border-gray-200';
         }
     };
 
+    /**
+     * Generates order timeline
+     * Shows completed/active based on current status
+     */
     const getOrderTimeline = (status: string) => {
+        // Separate timeline for return flow
+        if (['return_requested', 'return_approved', 'return_picked', 'refunded'].includes(status)) {
+            const returnTimeline = [
+                { label: 'Delivered', status: 'delivered', completed: true },
+                { label: 'Return Requested', status: 'return_requested', completed: false },
+                { label: 'Return Approved', status: 'return_approved', completed: false },
+                { label: 'Picked Up', status: 'return_picked', completed: false },
+                { label: 'Refunded', status: 'refunded', completed: false },
+            ];
+            const returnOrder = ['delivered', 'return_requested', 'return_approved', 'return_picked', 'refunded'];
+            const currentIndex = returnOrder.indexOf(status);
+            return returnTimeline.map((item, index) => ({
+                ...item,
+                completed: index <= currentIndex,
+                active: index === currentIndex,
+            }));
+        }
+
+        // Normal order flow
         const timeline = [
             { label: 'Order Placed', status: 'pending', completed: true },
+            { label: 'Confirmed', status: 'confirmed', completed: false },
             { label: 'Processing', status: 'processing', completed: false },
             { label: 'Shipped', status: 'shipped', completed: false },
             { label: 'Delivered', status: 'delivered', completed: false },
         ];
 
-        const statusOrder = ['pending', 'processing', 'shipped', 'delivered'];
+        if (status === 'cancelled') {
+            return [{ label: 'Cancelled', status: 'cancelled', completed: true, active: true }];
+        }
+
+        const statusOrder = ['pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
         const currentIndex = statusOrder.indexOf(status);
 
         return timeline.map((item, index) => ({
@@ -336,45 +367,13 @@ const OrderDetails: React.FC = () => {
     const handleUpdateStatus = async () => {
         if (!selectedStatus || !id) return;
 
-        setUpdating(true);
         try {
-            const response = await fetch(`http://localhost:5001/api/orders/${id}/status`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
-                body: JSON.stringify({ status: selectedStatus })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update status');
-            }
-
-            const updatedOrder = await response.json();
-
-            // Map the updated order to match our Order type
-            const mappedOrder: Order = {
-                id: updatedOrder.id,
-                customer_name: updatedOrder.user?.Username || `User #${updatedOrder.userId}`,
-                customer_email: updatedOrder.user?.Email || '',
-                product_id: updatedOrder.items[0]?.productId || 0,
-                product_name: updatedOrder.items[0]?.productName || 'Product',
-                quantity: updatedOrder.items.reduce((sum: number, it: any) => sum + (it.quantity || 0), 0),
-                total_amount: Number.parseFloat(updatedOrder.total || '0'),
-                status: updatedOrder.status,
-                shipping_address: updatedOrder.addressText || '',
-                created_at: updatedOrder.createdAt,
-                updated_at: updatedOrder.updatedAt
-            };
-
-            setOrder(mappedOrder);
+            await updateStatus({ id: Number(id), status: selectedStatus });
             setShowStatusModal(false);
             setSelectedStatus('');
+            // Toast handled by hook
         } catch (err: any) {
-            alert(err.message || 'Failed to update order status');
-        } finally {
-            setUpdating(false);
+            // Toast handled by hook
         }
     };
 
@@ -450,7 +449,7 @@ const OrderDetails: React.FC = () => {
                         {downloading ? 'Downloading...' : 'Invoice'}
                     </button>
                     <button
-                        onClick={loadOrderDetails}
+                        onClick={() => refetch()}
                         className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                     >
                         <RefreshCw className="w-4 h-4 mr-2" />
@@ -461,7 +460,6 @@ const OrderDetails: React.FC = () => {
 
             {/* Order Status Timeline */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Order Status</h2>
                 <div className="relative">
                     <div className="flex justify-between items-center">
                         {timeline.map((item, index) => (
@@ -486,6 +484,7 @@ const OrderDetails: React.FC = () => {
                         ))}
                     </div>
                 </div>
+
                 <div className="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
@@ -493,22 +492,35 @@ const OrderDetails: React.FC = () => {
                             <span className="ml-2 capitalize">{order.status}</span>
                         </span>
                     </div>
-                    <button
-                        onClick={() => {
-                            setSelectedStatus(order.status);
-                            setShowStatusModal(true);
-                        }}
-                        className="flex items-center text-sm text-black hover:text-gray-600"
-                    >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Update Status
-                    </button>
+                    <div className="flex space-x-3">
+                        {/* Only show Ship button for confirmed/processing */}
+                        {['confirmed', 'processing'].includes(order.status) && (
+                            <button
+                                onClick={() => setShowShipModal(true)}
+                                className="flex items-center text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                <Truck className="w-4 h-4 mr-1" />
+                                Ship Order
+                            </button>
+                        )}
+                        <button
+                            onClick={() => {
+                                setSelectedStatus(order.status);
+                                setShowStatusModal(true);
+                            }}
+                            className="flex items-center text-sm text-black hover:text-gray-600"
+                        >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Update Status
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* Status Update Modal */}
             {showStatusModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    {/* ... existing status modal code ... */}
                     <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-gray-900">Update Order Status</h3>
@@ -519,7 +531,6 @@ const OrderDetails: React.FC = () => {
                                 <XCircle className="w-5 h-5" />
                             </button>
                         </div>
-
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -530,28 +541,125 @@ const OrderDetails: React.FC = () => {
                                     onChange={(e) => setSelectedStatus(e.target.value)}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                                 >
-                                    <option value="pending">Pending</option>
-                                    <option value="processing">Processing</option>
-                                    <option value="shipped">Shipped</option>
-                                    <option value="delivered">Delivered</option>
-                                    <option value="cancelled">Cancelled</option>
+                                    <option value="" disabled>Select new status</option>
+
+                                    {/* Helper to check if status is permitted */}
+                                    {(() => {
+                                        const current = order.status;
+                                        const transitions: Record<string, string[]> = {
+                                            'pending': ['confirmed', 'cancelled'],
+                                            'confirmed': ['processing', 'cancelled'],
+                                            'processing': ['shipped', 'cancelled'],
+                                            'shipped': ['out_for_delivery', 'delivered'],
+                                            'out_for_delivery': ['delivered'],
+                                            'delivered': ['return_requested'],
+                                            'return_requested': ['return_approved', 'delivered'],
+                                            'return_approved': ['return_picked'],
+                                            'return_picked': ['refunded'],
+                                            'cancelled': [],
+                                            'refunded': []
+                                        };
+
+                                        const displayNames: Record<string, string> = {
+                                            'pending': 'Pending',
+                                            'confirmed': 'Confirmed',
+                                            'processing': 'Processing',
+                                            'shipped': 'Shipped',
+                                            'out_for_delivery': 'Out for Delivery',
+                                            'delivered': 'Delivered',
+                                            'cancelled': 'Cancelled',
+                                            'return_requested': 'Return Requested',
+                                            'return_approved': 'Return Approved',
+                                            'return_picked': 'Return Picked Up',
+                                            'refunded': 'Refunded'
+                                        };
+
+                                        const allowed = transitions[current] || [];
+
+                                        // Include current status just in case
+                                        return allowed.map(status => (
+                                            <option key={status} value={status}>
+                                                {displayNames[status] || status}
+                                            </option>
+                                        ));
+                                    })()}
                                 </select>
                             </div>
-
                             <div className="flex space-x-3">
                                 <button
                                     onClick={() => setShowStatusModal(false)}
                                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                    disabled={updating}
+                                    disabled={isStatusUpdating}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleUpdateStatus}
-                                    disabled={updating || !selectedStatus}
+                                    disabled={isStatusUpdating || !selectedStatus}
                                     className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {updating ? 'Updating...' : 'Update Status'}
+                                    {isStatusUpdating ? 'Updating...' : 'Update Status'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ship Order Modal */}
+            {showShipModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">Ship Order</h3>
+                            <button
+                                onClick={() => setShowShipModal(false)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <XCircle className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Courier Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={shippingDetails.courier}
+                                    onChange={(e) => setShippingDetails({ ...shippingDetails, courier: e.target.value })}
+                                    placeholder="e.g. Delhivery, BlueDart"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Tracking Number / AWB
+                                </label>
+                                <input
+                                    type="text"
+                                    value={shippingDetails.trackingNumber}
+                                    onChange={(e) => setShippingDetails({ ...shippingDetails, trackingNumber: e.target.value })}
+                                    placeholder="e.g. 1234567890"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                />
+                            </div>
+
+                            <div className="flex space-x-3 pt-2">
+                                <button
+                                    onClick={() => setShowShipModal(false)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    disabled={isOrderShipping}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleShipOrder}
+                                    disabled={isOrderShipping || !shippingDetails.courier || !shippingDetails.trackingNumber}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isOrderShipping ? 'Shipping...' : 'Mark as Shipped'}
                                 </button>
                             </div>
                         </div>

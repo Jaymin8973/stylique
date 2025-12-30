@@ -1,8 +1,15 @@
+/**
+ * Orders Route - Order management ke saare endpoints
+ * Create, read, update status, cancel, return - sab yahan hai
+ */
+
 import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import authAny from '../middleware/authAny.js';
 import { generateInvoicePDF, formatInvoiceData } from '../utils/invoice-generator.js';
-import { sendOrderNotificationEmail } from '../utils/email-service.js';
+import { sendOrderNotificationEmail, sendOrderConfirmationEmail, sendOrderShippedEmail, sendOrderDeliveredEmail } from '../utils/email-service.js';
+// Order state machine service import
+import orderService from '../services/orderService.js';
 
 const router = Router();
 
@@ -106,6 +113,11 @@ router.post('/', async (req, res) => {
       console.error('Failed to send order notification email:', err.message);
     });
 
+    // Send confirmation email to customer
+    sendOrderConfirmationEmail(fullOrder).catch((err) => {
+      console.error('Failed to send customer confirmation email:', err.message);
+    });
+
     // Create seller dashboard notification
     const itemNames = order.items.map(i => i.productName).join(', ');
     await prisma.sellernotification.create({
@@ -174,6 +186,9 @@ router.get('/admin', async (req, res) => {
             product: true,
           },
         },
+        tracking: {
+          orderBy: { eventAt: 'desc' }
+        }
       },
     });
 
@@ -181,6 +196,10 @@ router.get('/admin', async (req, res) => {
       const firstItem = o.items[0];
       const totalAmount = Number.parseFloat(o.total || '0') || 0;
       const qty = o.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+
+      // Extract return reason from tracking if available
+      const returnEvent = o.tracking.find(t => t.status.startsWith('Return requested'));
+      const returnReason = returnEvent ? returnEvent.status.replace('Return requested: ', '') : undefined;
 
       return {
         id: o.id,
@@ -193,6 +212,7 @@ router.get('/admin', async (req, res) => {
         total_amount: totalAmount,
         status: o.status || 'processing',
         shipping_address: o.addressText || '',
+        return_reason: returnReason,
         created_at: o.createdAt ? o.createdAt.toISOString() : new Date().toISOString(),
         updated_at: o.updatedAt ? o.updatedAt.toISOString() : new Date().toISOString(),
       };
@@ -404,12 +424,15 @@ router.get('/:id/invoice/pdf', async (req, res) => {
   }
 });
 
-// Admin: Update order status
+/**
+ * Admin: Update order status
+ * State machine se validate karta hai ki transition valid hai ya nahi
+ */
 router.patch('/:id/status', async (req, res) => {
   try {
-    // Only allow seller/admin roles
+    // Seller/admin role check
     if (Number(req.user.roleId) !== 2) {
-      return res.status(403).json({ error: 'Forbidden' });
+      return res.status(403).json({ error: 'Forbidden - Seller access required' });
     }
 
     const id = Number(req.params.id);
@@ -418,49 +441,199 @@ router.patch('/:id/status', async (req, res) => {
     if (!id) return res.status(400).json({ error: 'Invalid order id' });
     if (!status) return res.status(400).json({ error: 'Status is required' });
 
-    // Validate status
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status value' });
-    }
-
+    // Order fetch karo
     const order = await prisma.orders.findUnique({ where: { id } });
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    // Update order status
+    // State machine se validate karo
+    if (!orderService.isValidTransition(order.status, status)) {
+      const possibleStatuses = orderService.getNextPossibleStatuses(order.status);
+      return res.status(400).json({
+        error: `Invalid status transition from '${order.status}' to '${status}'`,
+        allowedStatuses: possibleStatuses
+      });
+    }
+
+    // Status update karo
     const updated = await prisma.orders.update({
       where: { id },
-      data: {
-        status,
-        updatedAt: new Date()
-      },
-      include: {
-        items: true,
-        user: true
-      }
+      data: { status, updatedAt: new Date() },
+      include: { items: true, user: true }
     });
 
-    // Create tracking event for status change
-    const statusMessages = {
-      pending: 'Order placed and awaiting confirmation',
-      processing: 'Order is being processed',
-      shipped: 'Order has been shipped',
-      delivered: 'Order has been delivered',
-      cancelled: 'Order has been cancelled'
-    };
-
+    // Tracking event create karo
+    const displayText = orderService.getStatusDisplayText(status);
     await prisma.ordertracking.create({
       data: {
         orderId: id,
-        status: statusMessages[status] || `Status updated to ${status}`,
+        status: displayText,
         eventAt: new Date()
       }
     });
 
-    return res.json(updated);
+    // Send email notifications based on status
+    if (status === 'shipped') {
+      sendOrderShippedEmail(updated).catch(console.error);
+    } else if (status === 'delivered') {
+      sendOrderDeliveredEmail(updated).catch(console.error);
+    }
+
+    return res.json({
+      ...updated,
+      statusDisplay: displayText,
+      statusColor: orderService.getStatusColor(status),
+      nextPossibleStatuses: orderService.getNextPossibleStatuses(status)
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Failed to update order status' });
+  }
+});
+
+/**
+ * Customer: Cancel order
+ * Sirf pending, confirmed, processing orders cancel ho sakte hain
+ */
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const id = Number(req.params.id);
+    const { reason } = req.body || {};
+
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+
+    // User ka order hi cancel ho sakta hai
+    const order = await prisma.orders.findFirst({ where: { id, userId } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Check karo cancel ho sakta hai ya nahi
+    if (!orderService.canCancelOrder(order.status)) {
+      return res.status(400).json({
+        error: `Order cannot be cancelled. Current status: ${order.status}`,
+        message: 'Orders can only be cancelled before shipping'
+      });
+    }
+
+    // Cancel karo
+    const updated = await prisma.orders.update({
+      where: { id },
+      data: { status: orderService.ORDER_STATUSES.CANCELLED, updatedAt: new Date() },
+      include: { items: true }
+    });
+
+    // Tracking event
+    await prisma.ordertracking.create({
+      data: {
+        orderId: id,
+        status: `Order cancelled${reason ? `: ${reason}` : ''}`,
+        eventAt: new Date()
+      }
+    });
+
+    // Seller notification
+    await prisma.sellernotification.create({
+      data: {
+        type: 'order_cancelled',
+        title: `Order #${order.orderNumber} Cancelled`,
+        message: `Customer cancelled order. ${reason ? `Reason: ${reason}` : ''}`,
+        orderId: id,
+      }
+    }).catch(console.error);
+
+    return res.json({
+      message: 'Order cancelled successfully',
+      order: updated
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to cancel order' });
+  }
+});
+
+/**
+ * Customer: Request return
+ * Sirf delivered orders pe return request ho sakti hai
+ */
+router.post('/:id/return', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const id = Number(req.params.id);
+    const { reason, description } = req.body || {};
+
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+    if (!reason) return res.status(400).json({ error: 'Return reason is required' });
+
+    // User ka order check karo
+    const order = await prisma.orders.findFirst({ where: { id, userId } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Check karo return ho sakti hai ya nahi
+    if (!orderService.canRequestReturn(order.status)) {
+      return res.status(400).json({
+        error: `Return cannot be requested. Current status: ${order.status}`,
+        message: 'Returns can only be requested for delivered orders'
+      });
+    }
+
+    // Return status pe update karo
+    const updated = await prisma.orders.update({
+      where: { id },
+      data: { status: orderService.ORDER_STATUSES.RETURN_REQUESTED, updatedAt: new Date() },
+      include: { items: true }
+    });
+
+    // Tracking event
+    await prisma.ordertracking.create({
+      data: {
+        orderId: id,
+        status: `Return requested: ${reason}`,
+        eventAt: new Date()
+      }
+    });
+
+    // Seller notification
+    await prisma.sellernotification.create({
+      data: {
+        type: 'return_requested',
+        title: `Return Request - Order #${order.orderNumber}`,
+        message: `Customer requested return. Reason: ${reason}. ${description || ''}`,
+        orderId: id,
+      }
+    }).catch(console.error);
+
+    return res.json({
+      message: 'Return request submitted successfully',
+      order: updated
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to submit return request' });
+  }
+});
+
+/**
+ * Get possible statuses for an order
+ * Frontend ko batata hai next kya-kya statuses possible hain
+ */
+router.get('/:id/possible-statuses', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid order id' });
+
+    const order = await prisma.orders.findUnique({ where: { id }, select: { status: true } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    return res.json({
+      currentStatus: order.status,
+      currentStatusDisplay: orderService.getStatusDisplayText(order.status),
+      currentStatusColor: orderService.getStatusColor(order.status),
+      possibleStatuses: orderService.getNextPossibleStatuses(order.status),
+      canCancel: orderService.canCancelOrder(order.status),
+      canRequestReturn: orderService.canRequestReturn(order.status),
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to get status info' });
   }
 });
 

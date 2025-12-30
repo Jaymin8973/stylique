@@ -1,43 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Search, Filter, Download, Eye, Package, Truck, CheckCircle, XCircle, ShoppingCart, DollarSign, Clock, RefreshCw, FileText } from 'lucide-react';
-import { apiService, type Order } from '../../services/api';
+
+import { useOrders } from '../../hooks/useOrders';
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const { orders, isLoading: loading, error: queryError, refetch, downloadInvoice } = useOrders();
+  const error = queryError ? (queryError as Error).message : null;
+
   const [downloadingOrderId, setDownloadingOrderId] = useState<number | null>(null);
 
   const handleDownloadInvoice = async (orderId: number) => {
     setDownloadingOrderId(orderId);
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:5001/api/orders/admin/${orderId}/invoice/pdf`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to download invoice');
-      }
-
-      // Get the PDF blob
-      const blob = await response.blob();
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
+      const url = await downloadInvoice(orderId);
       const a = document.createElement('a');
       a.href = url;
       a.download = `invoice-order-${orderId}.pdf`;
       document.body.appendChild(a);
       a.click();
-
-      // Cleanup
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err: any) {
@@ -47,22 +31,7 @@ const Orders: React.FC = () => {
     }
   };
 
-  const loadOrders = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiService.getOrders();
-      setOrders(data);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load orders');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
@@ -120,7 +89,7 @@ const Orders: React.FC = () => {
           <p className="text-gray-500 mt-1">Manage and track all customer orders</p>
         </div>
         <div className="flex space-x-3">
-          <button onClick={loadOrders} className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <button onClick={() => refetch()} className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </button>

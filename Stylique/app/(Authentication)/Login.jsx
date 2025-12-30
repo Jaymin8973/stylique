@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { Image } from 'expo-image';
+
 import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -13,16 +12,16 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import * as Yup from 'yup';
-import IpAddress from '../../Config.json';
 
+
+
+import { useAuth } from '../../hooks/useAuth';
+import { Image } from 'expo-image';
 
 const Login = () => {
   const router = useRouter();
   const [Loading, setLoading] = useState(false);
-
-  const API = axios.create({
-    baseURL: `http://${IpAddress.IpAddress}:5001`,
-  });
+  const { login, registerPushToken } = useAuth();
 
   useEffect(() => {
     const checkToken = async () => {
@@ -47,9 +46,9 @@ const Login = () => {
     onSubmit: async (values) => {
       try {
         setLoading(true);
-        const response = await API.post(`/api/auth/login`, values);
-        const token = response.data.token;
-        const userId = String(response.data.user.id);
+        const response = await login(values);
+        const token = response.token;
+        const userId = String(response.user.id);
         await AsyncStorage.setItem('userToken', token);
         await SecureStore.setItemAsync('userId', userId);
         try {
@@ -72,10 +71,12 @@ const Login = () => {
             console.log('Expo push token:', pushToken?.data);
             if (pushToken?.data) {
               try {
-                const res = await API.post('/api/notifications/register', { token: pushToken.data }, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                console.log('Register push token response:', res.data);
+                // Pass userToken explicitly if API interceptor might not catch it yet (though it reads from async storage)
+                // Actually, API interceptor reads from AsyncStorage, which we just set.
+                // But just in case, we can pass it if the hook supports it or just rely on interceptor.
+                // The hook implementation: const headers = userToken ? { Authorization: `Bearer ${userToken}` } : {};
+                const res = await registerPushToken({ token: pushToken.data, userToken: token });
+                console.log('Register push token response:', res);
               } catch (regErr) {
                 console.log('Failed to register push token:', regErr?.response?.data || regErr?.message);
               }

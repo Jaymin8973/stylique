@@ -6,46 +6,28 @@ import { useEffect, useState } from 'react';
 
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import API from '../../../Api';
+import { useUser } from '../../../hooks/useUser';
 import { Image } from 'expo-image';
 
 const Profile = () => {
   const router = useRouter();
-  const [name, setName] = useState(null);
-  const [email, setEmail] = useState(null);
-  const [Loading, setLoading] = useState(false);
-  const [token, setToken] = useState(null);
+  /* Removed local user state and fetch logic */
+  const { user, isLoading: Loading } = useUser();
+  const name = user?.Username;
+  const email = user?.Email;
 
+  // Token check is still valid for showing/hiding login UI but data fetching is now handled by hook
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
     const init = async () => {
       const storedToken = await AsyncStorage.getItem('userToken');
       setToken(storedToken);
-      if (token) {
-        await FetchData();
-      }
     };
-
     init();
-  }, [token]);
+  }, []);
 
-
-
-  const FetchData = async () => {
-    try {
-      setLoading(true);
-      const UserID = await SecureStore.getItemAsync('userId');
-      const res = await API.get(`/api/user/${UserID}`);
-      const Name = res.data.Username;
-      setName(Name);
-      setEmail(res.data.Email);
-    } catch (err) {
-      console.log(err.message);
-      alert(err?.response?.data?.message || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* Removed FetchData function */
 
   const handleLogout = async () => {
     try {

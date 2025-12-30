@@ -1,9 +1,10 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Upload, Plus, Trash2, Eye, Camera } from 'lucide-react';
-import ProductApi from '../../services/productApi';
+
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
+import { useProducts, useProduct } from '../../hooks/useProducts';
 
 interface ProductImage {
   id: string;
@@ -84,15 +85,20 @@ interface ProductFormData {
 const ProductUpload: React.FC = () => {
   const { id } = useParams();
   const isEdit = Boolean(id);
+  /* Custom Hooks */
+  const { createProduct, updateProduct, isCreating, isUpdating } = useProducts();
+  const { data: productData, isLoading: loadingProduct } = useProduct(Number(id));
+
   const [productType, setProductType] = useState('clothing');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
-  const [gender, setGender] = useState('men');
+  const [gender, setGender] = useState('male');
   const [images, setImages] = useState<ProductImage[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const isSubmitting = isCreating || isUpdating;
 
   const {
     register,
@@ -166,8 +172,87 @@ const ProductUpload: React.FC = () => {
     }
   }, [mrpValue, discountValue, taxValue, setValue]);
 
+  // Prefill for edit mode when productData is available
+  useEffect(() => {
+    if (isEdit && productData) {
+      const p = productData;
+      setProductType(p.productType || 'clothing');
+      setGender(p.gender || 'men');
+      setCategory(p.category || '');
+      setSubCategory(p.subcategory || '');
+
+      reset({
+        productName: p.productName || '',
+        brand: p.brand || '',
+        description: p.description || '',
+        shortDescription: p.shortDescription || '',
+        mrp: p.mrp || '',
+        sellingPrice: p.sellingPrice || '',
+        discount: p.discountPercent || '',
+        tax: p.taxPercent || '',
+        metaTitle: p.metaTitle || '',
+        metaDescription: p.metaDescription || '',
+        tags: p.tags || '',
+        imageUrl: (p.images?.find((i: any) => i.isPrimary)?.url) || p.imageUrl || '',
+        sku: p.sku || '',
+        hsn: p.hsnCode || '',
+        totalStock: p.totalStock || '',
+        lowStockAlert: p.lowStockAlert || '',
+        // Clothing
+        material: p.clothingdetail?.material || '',
+        fabric: p.clothingdetail?.fabric || '',
+        pattern: p.clothingdetail?.pattern || '',
+        collarType: p.clothingdetail?.collarType || '',
+        sleeveType: p.clothingdetail?.sleeveType || '',
+        fit: p.clothingdetail?.fit || '',
+        occasion: p.clothingdetail?.occasion || '',
+        season: p.clothingdetail?.season || '',
+        careInstructions: p.clothingdetail?.careInstructions || '',
+        // Footwear
+        footwearType: p.footwearDetail?.footwearType || '',
+        heelHeight: p.footwearDetail?.heelHeight || '',
+        soleMaterial: p.footwearDetail?.soleMaterial || '',
+        upperMaterial: p.footwearDetail?.upperMaterial || '',
+        closure: p.footwearDetail?.closure || '',
+        // Accessories
+        accessoryType: p.accessoryDetail?.accessoryType || '',
+        dimensions: p.accessoryDetail?.dimensions || '',
+        weight: p.accessoryDetail?.weight || '',
+        // Shipping
+        shippingWeight: p.shippingWeight || '',
+        packageDimensions: p.packageDimensions || '',
+        returnPolicy: p.returnPolicy || '',
+        shippingClass: p.shippingClass || '',
+        // Status
+        status: p.status || 'draft',
+      });
+
+      // Images
+      if (Array.isArray(p.images)) {
+        setImages(p.images.map((img: any) => ({
+          id: String(img.id),
+          file: null,
+          url: img.url,
+          isPrimary: !!img.isPrimary,
+        })));
+      }
+
+      // Variants
+      if (Array.isArray(p.variant)) {
+        setVariants(p.variant.map((v: any) => ({
+          id: String(v.id),
+          size: v.size || '',
+          color: v.color || '',
+          stock: Number(v.stock ?? 0),
+          price: Number(v.price ?? 0),
+          sku: v.sku || '',
+        })));
+      }
+    }
+  }, [isEdit, productData, reset]);
+
   const clothingCategories = {
-    men: {
+    male: {
       'topwear': ['T-Shirts', 'Shirts', 'Polo T-Shirts', 'Hoodies & Sweatshirts', 'Jackets', 'Blazers', 'Sweaters', 'Tank Tops'],
       'bottomwear': ['Jeans', 'Trousers', 'Shorts', 'Track Pants', 'Joggers', 'Chinos'],
       'innerwear': ['Briefs', 'Boxers', 'Vests', 'Thermals'],
@@ -175,7 +260,7 @@ const ProductUpload: React.FC = () => {
       'activewear': ['Sports T-Shirts', 'Track Suits', 'Gym Wear', 'Running Shorts'],
       'winterwear': ['Jackets', 'Coats', 'Sweaters', 'Hoodies', 'Thermals']
     },
-    women: {
+    female: {
       'topwear': ['T-Shirts', 'Tops', 'Shirts', 'Blouses', 'Crop Tops', 'Tank Tops', 'Tunics'],
       'bottomwear': ['Jeans', 'Trousers', 'Shorts', 'Skirts', 'Palazzos', 'Leggings'],
       'dresses': ['Casual Dresses', 'Party Dresses', 'Maxi Dresses', 'Mini Dresses', 'Midi Dresses'],
@@ -185,25 +270,11 @@ const ProductUpload: React.FC = () => {
       'winterwear': ['Jackets', 'Coats', 'Sweaters', 'Cardigans', 'Shawls']
     },
     unisex: {
-      'topwear': ['T-Shirts', 'Tops', 'Shirts', 'Blouses', 'Crop Tops', 'Tank Tops', 'Tunics'],
-      'bottomwear': ['Jeans', 'Trousers', 'Shorts', 'Skirts', 'Palazzos', 'Leggings'],
-      'dresses': ['Casual Dresses', 'Party Dresses', 'Maxi Dresses', 'Mini Dresses', 'Midi Dresses'],
-      'ethnicwear': ['Sarees', 'Kurtas & Kurtis', 'Lehenga Choli', 'Salwar Suits', 'Ethnic Dresses'],
-      'innerwear': ['Bras', 'Panties', 'Camisoles', 'Shapewear', 'Nightwear'],
-      'activewear': ['Sports Bras', 'Yoga Pants', 'Track Suits', 'Gym Wear'],
-      'winterwear': ['Jackets', 'Coats', 'Sweaters', 'Cardigans', 'Shawls']
+      'topwear': ['T-Shirts', 'Shirts', 'Hoodies', 'Sweaters', 'Jackets'],
+      'bottomwear': ['Jeans', 'Trousers', 'Shorts', 'Joggers', 'Track Pants'],
+      'activewear': ['Sports T-Shirts', 'Track Suits', 'Gym Wear'],
+      'winterwear': ['Jackets', 'Coats', 'Sweaters', 'Hoodies']
     }
-  };
-
-  const footwearCategories = {
-    men: ['Casual Shoes', 'Formal Shoes', 'Sports Shoes', 'Sneakers', 'Sandals', 'Flip Flops', 'Boots', 'Loafers'],
-    women: ['Heels', 'Flats', 'Sneakers', 'Sandals', 'Boots', 'Wedges', 'Sports Shoes', 'Ethnic Footwear'],
-  };
-
-  const accessoryCategories = {
-    men: ['Watches', 'Belts', 'Wallets', 'Sunglasses', 'Bags', 'Ties', 'Cufflinks', 'Caps & Hats'],
-    women: ['Jewellery', 'Watches', 'Handbags', 'Sunglasses', 'Belts', 'Scarves', 'Hair Accessories', 'Makeup'],
-    unisex: ['Watches', 'Belts', 'Wallets', 'Sunglasses', 'Bags', 'Ties', 'Cufflinks', 'Caps & Hats'],
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,7 +284,7 @@ const ProductUpload: React.FC = () => {
         const newImage: ProductImage = {
           id: Date.now().toString() + Math.random(),
           file,
-          url: URL.createObjectURL(file),
+          url: URL.createObjectURL(file), // Still using blob URL for preview
           isPrimary: images.length === 0
         };
         setImages(prev => [...prev, newImage]);
@@ -262,14 +333,12 @@ const ProductUpload: React.FC = () => {
   };
 
   const onFormSubmit = async (data: ProductFormData, status: 'draft' | 'active') => {
-    setIsSubmitting(true);
     setSubmitError(null);
     try {
-      // Basic client-side validation to avoid 400s from backend
+      // Basic client-side validation
       if (!data.sku || !String(data.sku).trim()) {
         const toast = (await import('react-hot-toast')).toast;
         toast.error('SKU is required.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -297,7 +366,6 @@ const ProductUpload: React.FC = () => {
         tags: data.tags || '',
         imageUrl: data.imageUrl || '',
         status: status,
-
         // Clothing
         material: data.material || '',
         fabric: data.fabric || '',
@@ -308,25 +376,21 @@ const ProductUpload: React.FC = () => {
         occasion: data.occasion || '',
         season: data.season || '',
         careInstructions: data.careInstructions || '',
-
         // Footwear
         footwearType: data.footwearType || '',
         heelHeight: data.heelHeight || '',
         soleMaterial: data.soleMaterial || '',
         upperMaterial: data.upperMaterial || '',
         closure: data.closure || '',
-
         // Accessories
         accessoryType: data.accessoryType || '',
         dimensions: data.dimensions || '',
         weight: data.weight || '',
-
         // Shipping & returns
         shippingWeight: data.shippingWeight || '',
         packageDimensions: data.packageDimensions || '',
         returnPolicy: data.returnPolicy || '',
         shippingClass: data.shippingClass || '',
-
         // Nested
         images: images.map(i => ({ url: i.url, isPrimary: !!i.isPrimary })),
         variants: variants.map(v => ({
@@ -338,119 +402,25 @@ const ProductUpload: React.FC = () => {
         })),
       };
 
-      const toast = (await import('react-hot-toast')).toast;
       if (isEdit) {
-        const updated = await ProductApi.updateProduct(Number(id), payload);
-        toast.success(`Product updated successfully! (ID: ${updated.id})`);
+        await updateProduct({ id: Number(id), data: payload });
+        // Toast handled by hook
       } else {
-        const created = await ProductApi.addProduct(payload);
-        toast.success(`Product ${status === 'draft' ? 'saved' : 'published'} successfully! (ID: ${created.id})`);
+        await createProduct(payload);
+        // Toast handled by hook
       }
       resetForm();
       navigate('/products');
     } catch (err: any) {
+      // Error handling is partly done by mutation onError, but we might want local state too
       const apiMsg = err?.response?.data?.error || err?.response?.data?.details || err?.message;
       setSubmitError(apiMsg || 'Failed to save product');
-      const toast = (await import('react-hot-toast')).toast;
-      toast.error(`Failed to save product: ${apiMsg || 'Unknown error'}`);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  // Prefill for edit mode
-  useEffect(() => {
-    const fetchAndFill = async () => {
-      if (!isEdit) return;
-      try {
-        const p = await ProductApi.getProductById(Number(id));
-        // Core
-        console.log(p)
-        setProductType(p.productType || 'clothing');
-        setGender(p.gender || 'men');
-        setCategory(p.category || '');
-        setSubCategory(p.subcategory || '');
-
-        // Reset form with fetched data
-        reset({
-          productName: p.productName || '',
-          brand: p.brand || '',
-          description: p.description || '',
-          shortDescription: p.shortDescription || '',
-          mrp: p.mrp || '',
-          sellingPrice: p.sellingPrice || '',
-          discount: p.discountPercent || '',
-          tax: p.taxPercent || '',
-          metaTitle: p.metaTitle || '',
-          metaDescription: p.metaDescription || '',
-          tags: p.tags || '',
-          imageUrl: (p.images?.find((i: any) => i.isPrimary)?.url) || p.imageUrl || '',
-          sku: p.sku || '',
-          hsn: p.hsnCode || '',
-          totalStock: p.totalStock || '',
-          lowStockAlert: p.lowStockAlert || '',
-          // Clothing
-          material: p.clothingdetail?.material || '',
-          fabric: p.clothingdetail?.fabric || '',
-          pattern: p.clothingdetail?.pattern || '',
-          collarType: p.clothingdetail?.collarType || '',
-          sleeveType: p.clothingdetail?.sleeveType || '',
-          fit: p.clothingdetail?.fit || '',
-          occasion: p.clothingdetail?.occasion || '',
-          season: p.clothingdetail?.season || '',
-          careInstructions: p.clothingdetail?.careInstructions || '',
-          // Footwear
-          footwearType: p.footwearDetail?.footwearType || '',
-          heelHeight: p.footwearDetail?.heelHeight || '',
-          soleMaterial: p.footwearDetail?.soleMaterial || '',
-          upperMaterial: p.footwearDetail?.upperMaterial || '',
-          closure: p.footwearDetail?.closure || '',
-          // Accessories
-          accessoryType: p.accessoryDetail?.accessoryType || '',
-          dimensions: p.accessoryDetail?.dimensions || '',
-          weight: p.accessoryDetail?.weight || '',
-          // Shipping
-          shippingWeight: p.shippingWeight || '',
-          packageDimensions: p.packageDimensions || '',
-          returnPolicy: p.returnPolicy || '',
-          shippingClass: p.shippingClass || '',
-          // Status
-          status: p.status || 'draft',
-        });
-
-        // Images
-        if (Array.isArray(p.images)) {
-          setImages(p.images.map((img: any) => ({
-            id: String(img.id),
-            file: null,
-            url: img.url,
-            isPrimary: !!img.isPrimary,
-          })));
-        }
-
-        // Variants
-        if (Array.isArray(p.variant)) {
-          setVariants(p.variant.map((v: any) => ({
-            id: String(v.id),
-            size: v.size || '',
-            color: v.color || '',
-            stock: Number(v.stock ?? 0),
-            price: Number(v.price ?? 0),
-            sku: v.sku || '',
-          })));
-        }
-      } catch (e) {
-        // ignore for now
-      }
-    };
-    fetchAndFill();
-  }, [isEdit, id, reset]);
-
   const getCurrentCategories = () => {
-    if (productType === 'clothing') return clothingCategories[gender as keyof typeof clothingCategories];
-    if (productType === 'footwear') return footwearCategories[gender as keyof typeof footwearCategories];
-    if (productType === 'accessories') return accessoryCategories[gender as keyof typeof accessoryCategories];
-    return {};
+    // Clothing only store - always return clothing categories
+    return clothingCategories[gender as keyof typeof clothingCategories] || clothingCategories.male;
   };
 
   // Helper to render category options for both object (clothing) and array (others)
@@ -484,21 +454,11 @@ const ProductUpload: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">Product Type & Category</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Type *</label>
-              <select
-                value={productType}
-                onChange={(e) => {
-                  setProductType(e.target.value);
-                  setCategory('');
-                  setSubCategory('');
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="clothing">Clothing</option>
-                <option value="footwear">Footwear</option>
-                <option value="accessories">Accessories</option>
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
+              <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-700">
+                Clothing
+              </div>
+              <input type="hidden" value="clothing" />
             </div>
 
             <div>
@@ -513,8 +473,9 @@ const ProductUpload: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value="men">Men</option>
-                <option value="women">Women</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="unisex">Unisex</option>
               </select>
             </div>
 
@@ -859,105 +820,6 @@ const ProductUpload: React.FC = () => {
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Machine wash cold, Do not bleach"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Footwear Details */}
-        {productType === 'footwear' && (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Footwear Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Heel Height</label>
-                <select
-                  {...register('heelHeight')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Height</option>
-                  <option value="flat">Flat (0-1 inch)</option>
-                  <option value="low">Low (1-2 inches)</option>
-                  <option value="medium">Medium (2-3 inches)</option>
-                  <option value="high">High (3-4 inches)</option>
-                  <option value="very-high">Very High (4+ inches)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sole Material</label>
-                <input
-                  type="text"
-                  {...register('soleMaterial')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Rubber, Leather"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upper Material</label>
-                <input
-                  type="text"
-                  {...register('upperMaterial')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Leather, Canvas"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Closure</label>
-                <select
-                  {...register('closure')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Closure</option>
-                  <option value="lace-up">Lace-up</option>
-                  <option value="slip-on">Slip-on</option>
-                  <option value="buckle">Buckle</option>
-                  <option value="velcro">Velcro</option>
-                  <option value="zipper">Zipper</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Accessories Details */}
-        {productType === 'accessories' && (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Accessory Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Accessory Type</label>
-                <select
-                  {...register('accessoryType')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Type</option>
-                  {getCurrentCategories().map((type: string) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Dimensions</label>
-                <input
-                  type="text"
-                  {...register('dimensions')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 10cm x 5cm x 2cm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Weight (grams)</label>
-                <input
-                  type="number"
-                  {...register('weight')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
                 />
               </div>
             </div>

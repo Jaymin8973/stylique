@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import API from '../../Api';
 import { THEME } from '../../constants/Theme';
 import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
 import { ScrollView } from 'react-native';
+import { useOrders } from '../../hooks/useOrders';
 
 const OrderItem = ({ order, onPress }) => {
   const firstItem = order.items?.[0];
@@ -73,32 +73,8 @@ const EmptyState = () => (
 
 export default function MyOrders() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
-
-  const loadOrders = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (activeTab !== 'all') {
-        params.append('status', activeTab);
-      }
-
-      const res = await API.get(`/api/orders?${params.toString()}`);
-
-      setOrders(res.data || []);
-    } catch (e) {
-      console.error(e);
-      // Handle error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadOrders();
-  }, [activeTab]);
+  const { orders, isLoading: loading } = useOrders(activeTab);
 
   const handleOrderPress = (order) => {
     router.push({ pathname: 'OrderSummary', params: { id: String(order.id) } });
@@ -128,8 +104,8 @@ export default function MyOrders() {
                 key={tab.id}
                 onPress={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 rounded-full mr-2 ${activeTab === tab.id
-                    ? 'bg-black'
-                    : 'bg-gray-100'
+                  ? 'bg-black'
+                  : 'bg-gray-100'
                   }`}
               >
                 <Text

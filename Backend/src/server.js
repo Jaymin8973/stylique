@@ -15,6 +15,7 @@ import notificationsRouter from './routes/notifications.js';
 import collectionsRouter from './routes/collections.js';
 import salesRouter from './routes/sales.js';
 import razorpayRouter from './routes/razorpay.js';
+import shippingRouter from './routes/shipping.js';
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api/collections', collectionsRouter);
 app.use('/api/sales', salesRouter);
 app.use('/api/razorpay', razorpayRouter);
+app.use('/api/shipping', shippingRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

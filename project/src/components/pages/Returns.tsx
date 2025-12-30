@@ -1,62 +1,66 @@
 import React from 'react';
-import { RotateCcw, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { RotateCcw, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { useOrders } from '../../hooks/useOrders';
 
 const Returns: React.FC = () => {
-  const returns = [
-    {
-      id: '#RET-001',
-      orderId: '#ORD-001',
-      customer: 'Alice Johnson',
-      product: 'iPhone 15 Pro Max',
-      reason: 'Defective product',
-      amount: 134900,
-      status: 'pending',
-      date: '2024-01-15',
-      requestDate: '2024-01-20'
-    },
-    {
-      id: '#RET-002',
-      orderId: '#ORD-145',
-      customer: 'Bob Smith',
-      product: 'Samsung Galaxy S24',
-      reason: 'Changed mind',
-      amount: 124999,
-      status: 'approved',
-      date: '2024-01-12',
-      requestDate: '2024-01-18'
-    },
-    {
-      id: '#RET-003',
-      orderId: '#ORD-089',
-      customer: 'Carol Davis',
-      product: 'MacBook Pro 16"',
-      reason: 'Wrong item received',
-      amount: 249900,
-      status: 'processing',
-      date: '2024-01-10',
-      requestDate: '2024-01-16'
-    },
-  ];
+  // Use the useOrders hook
+  const { orders, isLoading: loading, updateStatus } = useOrders();
+
+  // Filter for return requests
+  const returns = orders.filter(o =>
+    ['return_requested', 'return_approved', 'return_picked', 'refunded'].includes(o.status)
+  );
+
+  const handleApprove = async (id: number) => {
+    if (!confirm('Are you sure you want to approve this return?')) return;
+    try {
+      await updateStatus({ id, status: 'return_approved' });
+      // Toast handled by hook
+    } catch (error) {
+      // Toast handled by hook
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    if (!confirm('Rejecting will set status back to Delivered. Continue?')) return;
+    try {
+      await updateStatus({ id, status: 'delivered' });
+      // Toast handled by hook
+    } catch (error) {
+      // Toast handled by hook
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'approved': return <CheckCircle className="w-4 h-4" />;
-      case 'rejected': return <XCircle className="w-4 h-4" />;
-      case 'processing': return <RotateCcw className="w-4 h-4" />;
+      case 'return_requested': return <Clock className="w-4 h-4" />;
+      case 'return_approved': return <CheckCircle className="w-4 h-4" />;
+      case 'return_picked': return <RotateCcw className="w-4 h-4" />;
+      case 'refunded': return <CheckCircle className="w-4 h-4" />;
       default: return <AlertCircle className="w-4 h-4" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
+      case 'return_requested': return 'bg-yellow-100 text-yellow-800';
+      case 'return_approved': return 'bg-green-100 text-green-800';
+      case 'return_picked': return 'bg-blue-100 text-blue-800';
+      case 'refunded': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const stats = {
+    total: returns.length,
+    pending: returns.filter(r => r.status === 'return_requested').length,
+    processing: returns.filter(r => ['return_approved', 'return_picked'].includes(r.status)).length,
+    rate: returns.length > 0 ? 'N/A' : '0%' // Calculate if total orders known
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading returns...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -73,7 +77,7 @@ const Returns: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Returns</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">47</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
             </div>
             <RotateCcw className="w-8 h-8 text-blue-500" />
           </div>
@@ -81,19 +85,13 @@ const Returns: React.FC = () => {
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div>
             <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-            <p className="text-2xl font-bold text-yellow-600 mt-1">12</p>
+            <p className="text-2xl font-bold text-yellow-600 mt-1">{stats.pending}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div>
             <p className="text-sm font-medium text-gray-600">Processing</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">8</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Return Rate</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">2.1%</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{stats.processing}</p>
           </div>
         </div>
       </div>
@@ -107,74 +105,67 @@ const Returns: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Return ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reason
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {returns.map((returnItem) => (
-                <tr key={returnItem.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{returnItem.id}</div>
-                    <div className="text-sm text-gray-500">{returnItem.orderId}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{returnItem.customer}</div>
-                    <div className="text-sm text-gray-500">Requested: {returnItem.requestDate}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {returnItem.product}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {returnItem.reason}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{returnItem.amount.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(returnItem.status)}`}>
-                      {getStatusIcon(returnItem.status)}
-                      <span className="ml-1 capitalize">{returnItem.status}</span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      {returnItem.status === 'pending' && (
-                        <>
-                          <button className="text-green-600 hover:text-green-900">
-                            Approve
-                          </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      <button className="text-black hover:text-gray-600">
-                        View Details
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {returns.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-4 text-gray-500">No return requests found</td></tr>
+              ) : (
+                returns.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">#{item.id}</div>
+                      <div className="text-sm text-gray-500">{new Date(item.created_at).toLocaleDateString()}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{item.customer_name}</div>
+                      <div className="text-sm text-gray-500">{item.customer_email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {item.product_name} (x{item.quantity})
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.return_reason || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ₹{item.total_amount.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                        {getStatusIcon(item.status)}
+                        <span className="ml-1 capitalize">{item.status.replace('_', ' ')}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        {item.status === 'return_requested' && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(item.id)}
+                              className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded hover:bg-green-100"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleReject(item.id)}
+                              className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded hover:bg-red-100"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

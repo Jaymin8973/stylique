@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Percent, Image as ImageIcon, Search, X, Check, Filter } from 'lucide-react';
-import ProductApi from '../../services/productApi';
-import SaleApi, { type SalePayload } from '../../services/saleApi';
-import type { Product } from '../../services/api';
+import { useProducts } from '../../hooks/useProducts';
+import { useSales } from '../../hooks/useSales';
+import { SalePayload } from '../../services/api';
 
 const Sales: React.FC = () => {
+  /* Custom Hooks */
+  const { products, isLoading: loadingProducts } = useProducts();
+  const { sales, isLoading: loadingSales, error: salesError, createSale, isCreating: submitting, refetch: loadSales } = useSales();
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
@@ -14,70 +18,17 @@ const Sales: React.FC = () => {
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
 
-  const [products, setProducts] = useState<Product[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Product selection enhancements
   const [productSearch, setProductSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [bannerUploadError, setBannerUploadError] = useState<string | null>(null);
-
-  const [sales, setSales] = useState<any[]>([]);
-  const [loadingSales, setLoadingSales] = useState(false);
-  const [salesError, setSalesError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      setLoadingProducts(true);
-      try {
-        const backendData: any[] = await ProductApi.getAllProducts();
-        const mapped: Product[] = (backendData || []).map((p: any) => ({
-          id: p.id,
-          name: p.productName ?? '',
-          description: p.description ?? '',
-          price: Number(p.sellingPrice ?? 0),
-          stock: Number(p.totalStock ?? 0),
-          lowStockAlert: Number(p.lowStockAlert ?? 0),
-          category: p.category ?? '',
-          image_url: p.imageUrl ?? '',
-          created_at: (p.createdAt as string) ?? '',
-          updated_at: (p.updatedAt as string) ?? '',
-        }));
-        setProducts(mapped);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoadingProducts(false);
-      }
-    };
-
-    loadProducts();
-  }, []);
-
-  const loadSales = async () => {
-    setLoadingSales(true);
-    setSalesError(null);
-    try {
-      const data = await SaleApi.getSales();
-      setSales(Array.isArray(data) ? data : []);
-    } catch (e: any) {
-      console.error(e);
-      setSalesError(e?.response?.data?.error || e?.message || 'Failed to load sales');
-    } finally {
-      setLoadingSales(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSales();
-  }, []);
 
   // Get unique categories from products
   const categories = useMemo(() => {
@@ -191,9 +142,8 @@ const Sales: React.FC = () => {
       productIds: selectedIds,
     };
 
-    setSubmitting(true);
     try {
-      await SaleApi.createSale(payload);
+      await createSale(payload);
       setSuccess(
         status === 'active'
           ? 'Sale created and discount applied to selected products.'
@@ -207,12 +157,10 @@ const Sales: React.FC = () => {
       setStartAt('');
       setEndAt('');
       setSelectedIds([]);
-      loadSales();
+      // Sales refresh is automatic via react-query invalidation
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || 'Failed to create sale';
+      const msg = err?.message || 'Failed to create sale';
       setError(msg);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -471,15 +419,15 @@ const Sales: React.FC = () => {
                       type="button"
                       onClick={() => toggleProduct(p.id as number)}
                       className={`relative flex items-start gap-3 p-3 rounded-xl text-left transition-all duration-200 ${selected
-                          ? 'bg-white ring-2 ring-indigo-500 shadow-md'
-                          : 'bg-white border border-gray-200 hover:border-indigo-300 hover:shadow-sm'
+                        ? 'bg-white ring-2 ring-indigo-500 shadow-md'
+                        : 'bg-white border border-gray-200 hover:border-indigo-300 hover:shadow-sm'
                         }`}
                     >
                       {/* Selection indicator */}
                       <div
                         className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all ${selected
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-gray-200 text-transparent'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-200 text-transparent'
                           }`}
                       >
                         <Check className="h-3 w-3" />
@@ -562,7 +510,7 @@ const Sales: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={loadSales}
+            onClick={() => loadSales()}
             className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
           >
             Refresh
@@ -574,7 +522,7 @@ const Sales: React.FC = () => {
         )}
 
         {salesError && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{salesError}</div>
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{(salesError as Error)?.message || 'Failed to load sales'}</div>
         )}
 
         {!loadingSales && !salesError && sales.length === 0 && (
@@ -602,7 +550,6 @@ const Sales: React.FC = () => {
 
                   // Compute actual status based on dates
                   const now = new Date();
-                  let displayStatus = sale.status;
                   let statusColor = 'bg-gray-100 text-gray-700';
                   let statusLabel = 'Draft';
 
@@ -611,11 +558,9 @@ const Sales: React.FC = () => {
                     const startAt = sale.startAt ? new Date(sale.startAt) : null;
 
                     if (endAt && endAt < now) {
-                      displayStatus = 'ended';
                       statusColor = 'bg-red-100 text-red-800';
                       statusLabel = 'Ended';
                     } else if (startAt && startAt > now) {
-                      displayStatus = 'upcoming';
                       statusColor = 'bg-blue-100 text-blue-800';
                       statusLabel = 'Upcoming';
                     } else {

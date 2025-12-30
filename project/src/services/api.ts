@@ -11,7 +11,7 @@ export interface Product {
   image_url: string;
   created_at: string;
   updated_at: string;
-  lowStockAlert:number;
+  lowStockAlert: number;
 }
 
 export interface Order {
@@ -22,8 +22,9 @@ export interface Order {
   product_name?: string;
   quantity: number;
   total_amount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'return_requested' | 'return_approved' | 'return_picked' | 'refunded';
   shipping_address: string;
+  return_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +34,18 @@ export interface DashboardStats {
   totalOrders: number;
   totalRevenue: number;
   lowStockProducts: number;
+}
+
+export interface SalePayload {
+  name: string;
+  description?: string;
+  bannerUrl?: string;
+  discountType: 'percent';
+  discountValue: string;
+  status?: 'draft' | 'active';
+  startAt?: string;
+  endAt?: string;
+  productIds: number[];
 }
 
 class ApiService {
@@ -140,6 +153,59 @@ class ApiService {
     return Array.isArray(data) ? (data as Order[]) : [];
   }
 
+  async updateOrderStatus(id: number, status: string): Promise<any> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const res = await fetch(`${this.base}/api/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.message || 'Failed to update status');
+    }
+    return await res.json();
+  }
+
+  async shipOrder(id: number, details: { courier: string; trackingNumber: string }): Promise<any> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const res = await fetch(`${this.base}/api/shipping/${id}/ship`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(details)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.message || 'Failed to ship order');
+    }
+    return await res.json();
+  }
+
+  async downloadInvoiceUrl(id: number): Promise<string> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const res = await fetch(`${this.base}/api/orders/admin/${id}/invoice/pdf`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to download invoice');
+    }
+
+    const blob = await res.blob();
+    return window.URL.createObjectURL(blob);
+  }
+
   // Dashboard methods
   async getDashboardStats(): Promise<DashboardStats> {
     const [all, orders] = await Promise.all([
@@ -153,6 +219,42 @@ class ApiService {
     const lowStockProducts = all.filter((p) => p.stock < 10).length;
 
     return { totalProducts, totalOrders, totalRevenue, lowStockProducts };
+  }
+
+  // Sales methods
+  async getSales(): Promise<any[]> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const res = await fetch(`${this.base}/api/sales`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.message || 'Failed to fetch sales');
+    }
+    return await res.json();
+  }
+
+  async createSale(payload: SalePayload): Promise<any> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const res = await fetch(`${this.base}/api/sales`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.message || 'Failed to create sale');
+    }
+    return await res.json();
   }
 }
 

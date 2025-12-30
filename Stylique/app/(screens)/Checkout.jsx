@@ -1,44 +1,30 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API from '../../Api';
 import { THEME } from '../../constants/Theme';
 import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
 
+// Hooks
+import { useAddress } from '../../hooks/useAddress';
+import { useCart } from '../../hooks/useCart';
+
 const Checkout = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [address, setAddress] = useState(null);
-  const [cart, setCart] = useState(null);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [addrRes, cartRes] = await Promise.all([
-        API.get('/api/address'),
-        API.get('/api/cart'),
-      ]);
+  // Hooks logic
+  const { defaultAddress: address, isLoading: addrLoading } = useAddress();
+  const { cartItems, isLoading: cartLoading } = useCart();
 
-      const addresses = addrRes.data || [];
-      const defaultAddress =
-        addresses.find((a) => a.isDefault) || addresses[0] || null;
-      setAddress(defaultAddress);
-      setCart(cartRes.data || null);
-    } catch (error) {
-      if (error.response) {
-        Toast.show({
-          type: 'error',
-          text1: error.response.data.message || error.response.data.error || 'Failed to load checkout data',
-        });
-      } else {
-        Toast.show({ type: 'error', text1: 'Network error, please try again' });
-      }
-    } finally {
-      setLoading(false);
-    }
+  // Derived cart object structure to match existing usage
+  const cart = {
+    items: cartItems,
+    subtotal: cartItems.reduce((sum, item) => sum + (parseFloat(item.unitPrice || item.product?.sellingPrice || 0) * item.quantity), 0)
   };
+
+  const loading = addrLoading || cartLoading;
+  const subtotal = cart?.subtotal || 0;
 
   useEffect(() => {
     const init = async () => {
@@ -47,13 +33,9 @@ const Checkout = () => {
         router.push('/(Authentication)/Login');
         return;
       }
-      await loadData();
     };
-
     init();
   }, []);
-
-  const subtotal = cart?.subtotal || 0;
 
   const handleChangeAddress = () => {
     router.push('Address');
@@ -68,36 +50,21 @@ const Checkout = () => {
       Toast.show({ type: 'error', text1: 'Your cart is empty' });
       return;
     }
-    try {
-      setLoading(true);
-      Toast.show({
-        type: 'success',
-        text1: 'Order placed successfully',
-        text2: 'Proceeding to payment...',
-      });
-      router.push({
-        pathname: 'PaymentMethod',
-        params: {
-          amount: String(subtotal),
-          productPrice: String(subtotal),
-          shipping: '0',
-        },
-      });
-    } catch (error) {
-      if (error.response) {
-        Toast.show({
-          type: 'error',
-          text1:
-            error.response.data.message ||
-            error.response.data.error ||
-            'Failed to place order',
-        });
-      } else {
-        Toast.show({ type: 'error', text1: 'Network error, please try again' });
-      }
-    } finally {
-      setLoading(false);
-    }
+
+    Toast.show({
+      type: 'success',
+      text1: 'Order placed successfully',
+      text2: 'Proceeding to payment...',
+    });
+
+    router.push({
+      pathname: 'PaymentMethod',
+      params: {
+        amount: String(subtotal),
+        productPrice: String(subtotal),
+        shipping: '0',
+      },
+    });
   };
 
   if (loading) {

@@ -7,6 +7,9 @@ import { NotificationProvider } from "./NotificationProvider";
 import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
@@ -38,15 +41,17 @@ export default function RootLayout() {
   }
   return (
     <NotificationProvider>
-      <SafeAreaProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(Onboarding)" />
-          <Stack.Screen name="(Authentication)" />
-          <Stack.Screen name="(drawer)" />
-          <Stack.Screen name="(screens)" />
-        </Stack>
-        <Toast position="top" autoHide={true} visibilityTime={2500} topOffset={50} />
-      </SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(Onboarding)" />
+            <Stack.Screen name="(Authentication)" />
+            <Stack.Screen name="(drawer)" />
+            <Stack.Screen name="(screens)" />
+          </Stack>
+          <Toast position="top" autoHide={true} visibilityTime={2500} topOffset={50} />
+        </SafeAreaProvider>
+      </QueryClientProvider>
       <StatusBar style="auto" />
     </NotificationProvider>
   );

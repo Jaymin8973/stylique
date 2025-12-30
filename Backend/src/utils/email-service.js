@@ -124,4 +124,148 @@ export async function sendOrderNotificationEmail(order) {
   });
 }
 
-export default { sendEmail, sendOrderNotificationEmail };
+/**
+ * Send order confirmation email to CUSTOMER
+ */
+export async function sendOrderConfirmationEmail(order) {
+  if (!order.user?.Email) return false;
+
+  const orderDate = new Date(order.createdAt).toLocaleDateString('en-IN', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  const itemsHtml = (order.items || []).map(item => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.productName}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${parseFloat(item.unitPrice || 0).toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><title>Order Confirmed</title></head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">Order Confirmed! ✅</h1>
+      </div>
+      
+      <div style="background: #fff; padding: 20px; border: 1px solid #eee; border-top: none;">
+        <p>Hi ${order.user.Username},</p>
+        <p>Thank you for your order! We're getting it ready to be shipped. We will notify you when it has been sent.</p>
+        
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h2 style="margin: 0 0 5px 0; color: #333; font-size: 18px;">Order #${order.orderNumber || order.id}</h2>
+          <p style="margin: 0; color: #666; font-size: 14px;">Placed on ${orderDate}</p>
+        </div>
+
+        <h3 style="color: #333; border-bottom: 2px solid #10B981; padding-bottom: 5px;">Items</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr style="background: #f8f9fa;">
+              <th style="padding: 10px; text-align: left;">Product</th>
+              <th style="padding: 10px; text-align: center;">Qty</th>
+              <th style="padding: 10px; text-align: right;">Price</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+
+        <div style="text-align: right;">
+          <p><strong>Total: ₹${parseFloat(order.total || 0).toFixed(2)}</strong></p>
+        </div>
+
+        <p>Shipping Address:<br>${order.addressText || 'N/A'}</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({
+    to: order.user.Email,
+    subject: `Order Confirmation #${order.orderNumber || order.id}`,
+    html,
+  });
+}
+
+/**
+ * Send order SHIPPED email to CUSTOMER
+ */
+export async function sendOrderShippedEmail(order) {
+  if (!order.user?.Email) return false;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><title>Order Shipped</title></head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">Your Order is on the way! 🚚</h1>
+      </div>
+      
+      <div style="background: #fff; padding: 20px; border: 1px solid #eee; border-top: none;">
+        <p>Hi ${order.user.Username},</p>
+        <p>Great news! Your order has been shipped and is on its way to you.</p>
+        
+        <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #bae6fd;">
+          <p style="margin: 0;"><strong>Courier:</strong> ${order.courier || 'Standard Shipping'}</p>
+          <p style="margin: 5px 0 0 0;"><strong>Tracking Number:</strong> ${order.trackingNumber || 'N/A'}</p>
+        </div>
+
+        <p>You can track your order in the app for real-time updates.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({
+    to: order.user.Email,
+    subject: `Your Order #${order.orderNumber || order.id} has been Shipped!`,
+    html,
+  });
+}
+
+/**
+ * Send order DELIVERED email to CUSTOMER
+ */
+export async function sendOrderDeliveredEmail(order) {
+  if (!order.user?.Email) return false;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><title>Order Delivered</title></head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">Order Delivered! 📦</h1>
+      </div>
+      
+      <div style="background: #fff; padding: 20px; border: 1px solid #eee; border-top: none;">
+        <p>Hi ${order.user.Username},</p>
+        <p>Your order has been delivered successfully. We hope you love your purchase!</p>
+        
+        <p>If you have any issues, you can request a return via the app within our return window.</p>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <p style="font-size: 14px; color: #666;">Thank you for shopping with Stylique!</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({
+    to: order.user.Email,
+    subject: `Your Order #${order.orderNumber || order.id} has been Delivered!`,
+    html,
+  });
+}
+
+export default {
+  sendEmail,
+  sendOrderNotificationEmail,
+  sendOrderConfirmationEmail,
+  sendOrderShippedEmail,
+  sendOrderDeliveredEmail
+};

@@ -5,14 +5,13 @@ import { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, FlatList, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import * as SecureStore from 'expo-secure-store';
-import API from '../../Api';
+import { useWishlist } from '../../hooks/useWishlist';
 import { Ionicons } from '@expo/vector-icons';
 const Wishlist = () => {
 
 
-  const [wishlistItems, setWishlistItems] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [removing, setRemoving] = React.useState({});
+
+
   const router = useRouter();
 
   const [userId, setUserId] = React.useState(null);
@@ -30,30 +29,19 @@ const Wishlist = () => {
     loadUserId();
   }, []);
 
-  useEffect(() => {
-    if (userId) fetchWishlist();
-  }, [userId]);
+  const { useUserWishlist, toggleWishlist, isToggling } = useWishlist(userId);
+  const { data: wishlistItems = [], isLoading: loading } = useUserWishlist();
+  const [removing, setRemoving] = React.useState({});
 
-  const fetchWishlist = async () => {
-    try {
-      setLoading(true);
-      if (!userId) return;
-      const res = await API.get(`/wishlist/user/${userId}`);
-      setWishlistItems(res.data || []);
-    } catch (e) {
-      console.error('Wishlist fetch error:', e?.response?.data || e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* Removed fetchWishlist and its useEffect */
 
   const removeFromWishlist = async (productId) => {
     try {
       setRemoving((r) => ({ ...r, [productId]: true }));
-      await API.post('/wishlist/remove', { user_id: userId, productId });
-      setWishlistItems((items) => items.filter((i) => i.productId !== productId));
+      await toggleWishlist({ productId, isInWishlist: true });
+      // List updates automatically via cache invalidation
     } catch (e) {
-      console.error('Wishlist remove error:', e?.response?.data || e.message);
+      console.error(e);
     } finally {
       setRemoving((r) => ({ ...r, [productId]: false }));
     }

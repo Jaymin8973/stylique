@@ -3,36 +3,27 @@ import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import { Easing, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { Animated } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import API from '../../../Api';
+import { useProducts } from '../../../hooks/useProducts';
 
 const Search = () => {
   const [searchText, setSearchText] = useState('');
   const slide1 = useRef(new Animated.Value(1000)).current;
   const slide2 = useRef(new Animated.Value(1000)).current;
   const slide3 = useRef(new Animated.Value(1000)).current;
-  const [Clothingcategories, setClothingcategories] = useState([]);
-  const [ShoesCategories, setShoesCategories] = useState([]);
-  const [AccessoriesCatgories, setAccessoriesCatgories] = useState([]);
+  /* Removed local category states and fetch logic */
+  const { useCategoryCounts } = useProducts();
   const firstTime = useRef(true);
+  const { data: categoryData } = useCategoryCounts();
+
+  const Clothingcategories = categoryData?.clothing || [];
+  const ShoesCategories = categoryData?.footwear || [];
+  const AccessoriesCatgories = categoryData?.accessories || [];
+
   const router = useRouter();
-  useEffect(() => {
-    fetchCatItems()
-  }, []);
-
-
-
-  const fetchCatItems = async () => {
-    const response = await API.get('api/products/categoryCounts')
-    const clothing = await response.data.clothing
-    const footwear = await response.data.footwear
-    const accessories = await response.data.accessories
-    setClothingcategories(clothing)
-    setAccessoriesCatgories(accessories)
-    setShoesCategories(footwear)
-  }
+  /* Removed useEffect for fetchCatItems */
 
 
 

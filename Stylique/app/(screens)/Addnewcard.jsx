@@ -1,4 +1,4 @@
-import axios from 'axios';
+
 import { Image, ImageBackground } from 'expo-image';
 import * as SecureStore from 'expo-secure-store';
 import { useFormik } from 'formik';
@@ -8,7 +8,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
-import IpAddress from '../../Config.json';
+import { usePayment } from '../../hooks/usePayment';
 
 const Addnewcard = () => {
     const [cardType, setCardType] = useState('Visa');
@@ -18,10 +18,8 @@ const Addnewcard = () => {
     const [cvv, setCvv] = useState('');
     const animatedValue = useRef(new Animated.Value(0)).current;
     const inputref = useRef(null);
-    const [loading, setLoading] = useState(false);
-    const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:3000`,
-});
+    /* Removed local API creation */
+    const { addPaymentCard, isAddingCard: loading } = usePayment();
 
     const validationSchema = yup.object().shape({
         cardNumber: yup.string().required('Card number is required'),
@@ -31,7 +29,7 @@ const Addnewcard = () => {
     });
 
 
-  
+
 
     const formik = useFormik({
         initialValues: {
@@ -45,13 +43,10 @@ const Addnewcard = () => {
             try {
                 const Email = await SecureStore.getItemAsync('userEmail');
                 const payload = { ...values, email: Email };
-                setLoading(true);
-                const response = await API.post(`/payment-cards/add`, payload);
-                Toast.show({
-                    type: 'success',
-                    text1: 'Card Added Successfully',
-                    text2: 'Your card has been added!'
-                });
+                // loading state handled by hook (bound to loading variable)
+                await addPaymentCard(payload);
+                // Success Toast handled in hook, but if we need specific navigation or clean up:
+                // Hook handles toast.
             } catch (error) {
                 if (error.response) {
                     alert(error.response.data.message || "Server error");
@@ -61,7 +56,6 @@ const Addnewcard = () => {
                     console.log(error.message);
                     alert(error.message);
                 }
-                setLoading(false);
             }
         },
     });

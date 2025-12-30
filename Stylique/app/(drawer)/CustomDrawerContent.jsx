@@ -1,34 +1,16 @@
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { useFocusEffect } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import API from '../../Api';
+import { useUser } from '../../hooks/useUser';
 
 
 export default function CustomDrawerContent(props) {
-    const [name, setName] = useState(null);
-    const [email, setEmail] = useState(null);
+    const { user } = useUser();
+    const name = user?.Username;
+    const email = user?.Email;
 
-    const FetchData = async () => {
-        try {
-            const UserID = await SecureStore.getItemAsync('userId');
-            if (UserID) {
-                const res = await API.get(`/api/user/${UserID}`);
-                const Name = res.data.Username;
-                setName(Name);
-                setEmail(res.data.Email);
-            }
-        } catch (err) {
-            console.error(err?.response?.data?.message || err.message);
-        }
-    };
+    /* Removed FetchData and state */
 
-    useFocusEffect(
-        useCallback(() => {
-            FetchData();
-        }, [])
-    );
+
 
     return (
         <DrawerContentScrollView {...props}>

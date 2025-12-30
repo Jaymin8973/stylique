@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Stars from 'react-native-stars';
-import API from '../../Api';
+
 import ImageGallery from '../../components/ImageGallery';
 import { THEME } from '../../constants/Theme';
 import Toast from 'react-native-toast-message';
@@ -15,30 +15,40 @@ import { StatusBar } from 'expo-status-bar';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+// Hooks
+import { useProducts } from '../../hooks/useProducts';
+import { useCart } from '../../hooks/useCart';
+import { useWishlist } from '../../hooks/useWishlist';
+
 export default function ProductDetail() {
   const params = useLocalSearchParams();
   const id = params.id;
   const router = useRouter();
-  const [product, setProduct] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { width, height } = Dimensions.get("window");
-  const [rating, setRating] = useState(0);
   const [expand, setExpand] = useState(false);
   const [expandReviews, setExpandReviews] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [isInWishlist, setIsInWishlist] = useState(false);
-  const [wlLoading, setWlLoading] = useState(false);
-  const [adding, setAdding] = useState(false);
   const [userId, setUserId] = useState(null);
-  const [inCart, setInCart] = useState(false);
-  const [recommendations, setRecommendations] = useState([]);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
-  const [cartItems, setCartItems] = useState([]);
 
   const bottomSheetRef = useRef(null);
   const recommendationsSheetRef = useRef(null);
+
+  // Hook usage
+  const { useProduct, useProductRating, useRecommendations } = useProducts();
+  const { data: product, isLoading: productLoading } = useProduct(id);
+  const { data: rating } = useProductRating(id);
+  const { data: recommendations, isLoading: recLoading } = useRecommendations(id);
+
+  const { addToCart, isAdding, checkInCart } = useCart();
+  const { checkWishlist, toggleWishlist, isToggling: wlLoading } = useWishlist(userId);
+  const { data: wlData } = checkWishlist(id);
+  const isInWishlist = wlData?.isInWishlist;
+
+  const inCart = checkInCart(id);
+  const prodRating = rating || { avgRating: 4.5, totalCount: 0, ratingPercentages: {} };
 
   // snap points (height values)
   const snapPoints = useMemo(() => ['25%', '50%'], []);
@@ -47,13 +57,7 @@ export default function ProductDetail() {
   const handleOpen = () => bottomSheetRef.current?.expand();
   const handleClose = () => bottomSheetRef.current?.close();
 
-  useEffect(() => {
-    if (id) {
-      fetchProductDetails();
-      fetchProductRating();
-    }
-  }, [id]);
-
+  // UserId loading
   useEffect(() => {
     const loadUserId = async () => {
       try {
@@ -64,81 +68,12 @@ export default function ProductDetail() {
     loadUserId();
   }, []);
 
-  useEffect(() => {
-    if (id && userId) checkWishlistStatus();
-  }, [id, userId]);
-
-  const checkInCart = async () => {
-    try {
-      const res = await API.get('/api/cart');
-      const items = res.data?.items || [];
-      setCartItems(items);
-      const present = items.some((it) => {
-        const pid = it.productId ?? it.product?.id ?? it.product?.productId;
-        return String(pid) === String(id);
-      });
-      setInCart(present);
-    } catch (e) {
-      // silent
+  const handleToggleWishlist = async () => {
+    if (!userId) {
+      router.push('/(Authentication)/Login');
+      return;
     }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      if (id) {
-        checkInCart();
-        fetchProductRating();
-      }
-    }, [id])
-  );
-
-  const fetchProductDetails = async () => {
-    try {
-      const response = await API.get(`/api/products/pid/${id}`);
-      setProduct(response.data);
-    } catch (error) {
-      console.error('Error fetching product details:', error);
-    }
-  };
-
-  const fetchProductRating = async () => {
-    try {
-      const response = await API.get(`/rating/${id}`);
-      setRating(response.data);
-    } catch (error) {
-      console.error('Error fetching product rating:', error);
-      // Set default rating if API fails
-      setRating({ avgRating: 4.5, totalCount: 0, ratingPercentages: {} });
-    }
-  };
-
-  const checkWishlistStatus = async () => {
-    try {
-      if (!userId) return;
-      const res = await API.get(`/wishlist/check/${userId}/${id}`);
-      setIsInWishlist(!!res.data?.isInWishlist);
-    } catch (e) {
-      // silent fail
-    }
-  };
-
-  const toggleWishlist = async () => {
-    if (wlLoading) return;
-    setWlLoading(true);
-    try {
-      if (!userId) return;
-      if (isInWishlist) {
-        await API.post('/wishlist/remove', { user_id: userId, productId: id });
-        setIsInWishlist(false);
-      } else {
-        await API.post('/wishlist/add', { user_id: userId, productId: id });
-        setIsInWishlist(true);
-      }
-    } catch (e) {
-      console.error('Wishlist toggle error:', e?.response?.data || e.message);
-    } finally {
-      setWlLoading(false);
-    }
+    await toggleWishlist({ productId: id, isInWishlist });
   };
 
   const handleScroll = (event) => {
@@ -148,34 +83,15 @@ export default function ProductDetail() {
     setCurrentIndex(slideIndex);
   };
 
-  const fetchRecommendations = async () => {
-    if (!id) return [];
-    try {
-      setLoadingRecommendations(true);
-      const response = await API.get(`/api/products/recommendations/${id}`);
-      const data = response.data || [];
-      setRecommendations(data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-      setRecommendations([]);
-      return [];
-    } finally {
-      setLoadingRecommendations(false);
-    }
-  };
-
   const handleAddToCart = async () => {
-    if (!id || adding) return;
+    if (!id || isAdding) return;
     try {
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
         router.push('/(Authentication)/Login');
         return;
       }
-      setAdding(true);
 
-      // If product is in sale, pass the sale price
       const cartPayload = {
         productId: Number(id),
         quantity,
@@ -185,18 +101,16 @@ export default function ProductDetail() {
         cartPayload.salePrice = product.saleInfo.salePrice;
       }
 
-      await API.post('/api/cart/add', cartPayload);
-      setInCart(true);
+      await addToCart(cartPayload);
 
       // Fetch recommendations after adding to cart
-      const recs = await fetchRecommendations();
-      if (recs && recs.length > 0) {
+      // recs likely come from hook usage above, not here
+      // But we can trigger opening sheet if recs exist
+      if (recommendations && recommendations.length > 0) {
         recommendationsSheetRef.current?.expand();
       }
     } catch (e) {
-      Toast.show({ type: 'error', text1: 'Failed to add to cart' });
-    } finally {
-      setAdding(false);
+      // toast shown by hook
     }
   };
 
@@ -207,24 +121,16 @@ export default function ProductDetail() {
 
   const handleAddRecommendationToCart = async (productId) => {
     try {
-      await API.post('/api/cart/add', {
+      await addToCart({
         productId: Number(productId),
         quantity: 1,
       });
-      Toast.show({ type: 'success', text1: 'Added to cart' });
-      // Refresh cart items to update button states
-      await checkInCart();
     } catch (e) {
-      Toast.show({ type: 'error', text1: 'Failed to add to cart' });
+      // handled
     }
   };
 
-  const isProductInCart = (productId) => {
-    return cartItems.some((item) => {
-      const pid = item.productId ?? item.product?.id ?? item.product?.productId;
-      return String(pid) === String(productId);
-    });
-  };
+
 
   const renderBackdrop = useCallback(
     (props) => (
@@ -276,7 +182,7 @@ export default function ProductDetail() {
                 </TouchableOpacity>
                 <Pressable
                   className="w-12 h-12 bg-white/30 rounded-full justify-center items-center shadow-lg"
-                  onPress={toggleWishlist}
+                  onPress={handleToggleWishlist}
                   disabled={wlLoading}
                 >
                   <Ionicons
@@ -352,7 +258,7 @@ export default function ProductDetail() {
                     emptyStar={<MaterialCommunityIcons name="star-outline" size={20} color={THEME.colors.rating} />}
                     halfStar={<MaterialCommunityIcons name="star-half" size={20} color={THEME.colors.rating} />}
                   />
-                  <Text className="text-gray-600 text-sm ml-2">({rating.totalCount || 0} reviews)</Text>
+                  <Text className="text-gray-600 text-sm ml-2">({prodRating.totalCount || 0} reviews)</Text>
                 </View>
               </View>
 
@@ -467,7 +373,7 @@ export default function ProductDetail() {
                     <View className="px-4 pb-4">
                       <View className="w-full flex-row justify-between items-center mb-4">
                         <View className="flex-row items-center gap-2">
-                          <Text className="text-4xl font-bold text-gray-900">{rating.avgRating || 4.5}</Text>
+                          <Text className="text-4xl font-bold text-gray-900">{prodRating.avgRating || 4.5}</Text>
                           <Text className="text-xs text-gray-500 font-medium">OUT OF 5</Text>
                         </View>
 
@@ -482,13 +388,13 @@ export default function ProductDetail() {
                             emptyStar={<MaterialCommunityIcons name="star-outline" size={20} color={THEME.colors.rating} />}
                             halfStar={<MaterialCommunityIcons name="star-half" size={20} color={THEME.colors.rating} />}
                           />
-                          <Text className="text-sm text-gray-500">{rating.totalCount || 0} ratings</Text>
+                          <Text className="text-sm text-gray-500">{prodRating.totalCount || 0} ratings</Text>
                         </View>
                       </View>
 
                       {[5, 4, 3, 2, 1].map(star => {
-                        const progressValue = ((rating.ratingPercentages?.[star.toString()] ?? 80) / 100);
-                        const displayPercentage = rating.ratingPercentages?.[star.toString()] ?? "80";
+                        const progressValue = ((prodRating.ratingPercentages?.[star.toString()] ?? 80) / 100);
+                        const displayPercentage = prodRating.ratingPercentages?.[star.toString()] ?? "80";
 
                         return (
                           <View key={star} className="flex-row w-full items-center mb-2">
@@ -543,10 +449,10 @@ export default function ProductDetail() {
                 </Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity onPress={handleAddToCart} disabled={adding} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
+              <TouchableOpacity onPress={handleAddToCart} disabled={isAdding} className="bg-white px-8 py-3 rounded-lg flex-row items-center">
                 <Ionicons name="bag-check-sharp" size={20} color={THEME.colors.primary} />
                 <Text className="ml-2 font-bold text-base" style={{ color: THEME.colors.primary }}>
-                  {adding ? 'Adding...' : 'Add To Cart'}
+                  {isAdding ? 'Adding...' : 'Add To Cart'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -569,7 +475,7 @@ export default function ProductDetail() {
               <Text className="text-gray-600">Similar products based on your selection</Text>
             </View>
 
-            {loadingRecommendations ? (
+            {recLoading ? (
               <View className="flex-1 justify-center items-center">
                 <Text className="text-gray-600">Loading recommendations...</Text>
               </View>
@@ -605,7 +511,7 @@ export default function ProductDetail() {
                         <Text className="text-base font-bold text-gray-900 mb-2">
                           ₹{item.sellingPrice}
                         </Text>
-                        {isProductInCart(item.id) ? (
+                        {checkInCart(item.id) ? (
                           <View className="bg-gray-200 rounded-lg py-2 px-3 flex-row items-center justify-center">
                             <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
                             <Text className="text-gray-700 text-xs font-semibold ml-1">Added to Cart</Text>

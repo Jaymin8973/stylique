@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Plus, Search, Filter, Download, Upload, Eye, Edit, Trash2, Package, AlertTriangle, TrendingUp, RefreshCw } from 'lucide-react';
-import { type Product } from '../../services/api';
-import ProductApi from '../../services/productApi';
+import { useProducts } from '../../hooks/useProducts';
 
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/100';
 
@@ -20,50 +19,34 @@ const Products: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Delete state
+  const { products, isLoading: loading, error: queryError, deleteProduct: deleteProductMutation, refetch } = useProducts();
+
+  // Delete state - purely for UI feedback if needed, though mutation handles most
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const loadProducts = async () => {
-    setLoading(true);
-    setError(null);
+  const error = queryError ? (queryError as Error).message : null;
+
+  const deleteProduct = async (id: number) => {
+    if (!confirm('Delete this product? This action cannot be undone.')) return;
+    setDeletingId(id);
     try {
-      const backendData: any[] = await ProductApi.getAllProducts();
-      const mapped: Product[] = backendData.map((p: any) => ({
-        id: p.id,
-        name: p.productName ?? '',
-        description: p.description ?? '',
-        price: Number(p.sellingPrice ?? 0),
-        stock: Number(p.totalStock ?? 0),
-        lowStockAlert: Number(p.lowStockAlert ?? 0),
-        category: p.category ?? '',
-        image_url: p.imageUrl ?? '',
-        created_at: (p.createdAt as string) ?? '',
-        updated_at: (p.updatedAt as string) ?? '',
-      }));
-      setProducts(mapped);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load products');
+      await deleteProductMutation(id);
+    } catch (e: any) {
+      // Toast is handled by the hook
     } finally {
-      setLoading(false);
+      setDeletingId(null);
     }
   };
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  const deriveStatus = (stock: number) => (stock <= 0 ? 'out_of_stock' : (stock < 10 ? 'low_stock' : 'active'));
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const matchesSearch = (product.name || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || (product.category || '').toLowerCase() === selectedCategory;
-      // Derive status: low_stock if stock < 10, out_of_stock if 0, else active
-      const derivedStatus = product.stock <= 0 ? 'out_of_stock' : (product.stock < product.lowStockAlert ? 'low_stock' : 'active');
-      const matchesStatus = selectedStatus === 'all' || derivedStatus === selectedStatus;
+      const productStatus = deriveStatus(product.stock);
+      const matchesStatus = selectedStatus === 'all' || productStatus === selectedStatus;
       return matchesSearch && matchesCategory && matchesStatus;
     });
   }, [products, searchTerm, selectedCategory, selectedStatus]);
@@ -87,23 +70,6 @@ const Products: React.FC = () => {
       case 'low_stock': return 'Low Stock';
       case 'out_of_stock': return 'Out of Stock';
       default: return status;
-    }
-  };
-
-  const deriveStatus = (stock: number) => (stock <= 0 ? 'out_of_stock' : (stock < 10 ? 'low_stock' : 'active'));
-
-  const deleteProduct = async (id: number) => {
-    if (!confirm('Delete this product? This action cannot be undone.')) return;
-    setDeletingId(id);
-    setDeleteError(null);
-    try {
-      await ProductApi.deleteProduct(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
-    } catch (e: any) {
-      setDeleteError(e?.message || 'Failed to delete product');
-      alert(`Failed to delete: ${e?.message || 'Unknown error'}`);
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -147,7 +113,7 @@ const Products: React.FC = () => {
           <p className="text-gray-500 mt-1">Manage your product catalog and inventory</p>
         </div>
         <div className="flex space-x-3">
-          <button onClick={loadProducts} className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" title="Refresh">
+          <button onClick={() => refetch()} className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" title="Refresh">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </button>
@@ -227,7 +193,7 @@ const Products: React.FC = () => {
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-black"
             />
           </div>
-          <select 
+          <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black"
@@ -239,7 +205,7 @@ const Products: React.FC = () => {
             <option value="clothing">Clothing</option>
             <option value="accessories">Accessories</option>
           </select>
-          <select 
+          <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black"
@@ -300,7 +266,7 @@ const Products: React.FC = () => {
                     <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <img 
+                          <img
                             src={isSafeImageUrl(product.image_url) ? product.image_url as string : PLACEHOLDER_IMG}
                             alt={product.name}
                             className="w-10 h-10 rounded-lg object-cover mr-3"
@@ -361,9 +327,7 @@ const Products: React.FC = () => {
 
       {/* Edit Modal removed - editing now redirects to /upload/:id */}
 
-      {deleteError && (
-        <p className="text-sm text-red-600">{deleteError}</p>
-      )}
+
     </div>
   );
 };

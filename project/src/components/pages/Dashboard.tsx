@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Package, AlertTriangle, DollarSign, Download, TrendingUp } from 'lucide-react';
 import MetricCard from '../shared/MetricCard';
@@ -6,32 +6,13 @@ import Chart from '../shared/Chart';
 import RecentOrders from '../features/dashboard/RecentOrders';
 import InventoryAlerts from '../features/dashboard/InventoryAlerts';
 import PerformanceMetrics from '../features/dashboard/PerformanceMetrics';
-import { apiService, type DashboardStats } from '../../services/api';
+import { useDashboard } from '../../hooks/useDashboard';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { stats, isLoading: loading, error } = useDashboard();
   const [timeRange, setTimeRange] = useState('7');
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [chartView, setChartView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiService.getDashboardStats();
-      setStats(data);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load stats');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleExportReport = () => {
     // Generate CSV report

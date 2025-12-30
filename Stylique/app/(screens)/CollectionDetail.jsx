@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import API from '../../Api';
+import { useCollections } from '../../hooks/useCollections';
+import { useWishlist } from '../../hooks/useWishlist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1520975682031-569d9b3c5a73?w=600';
 
@@ -12,68 +14,32 @@ const CollectionDetail = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
 
-  const [collection, setCollection] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [wishlistItems, setWishlistItems] = useState([]);
+  /* Hook Integration */
+  const { useCollectionDetail } = useCollections();
+  const { data: collection, isLoading: loading } = useCollectionDetail(id);
 
+  const [userId, setUserId] = useState(null);
   useEffect(() => {
-    if (id) {
-      fetchCollection();
+    const getUserId = async () => {
+      const uid = await AsyncStorage.getItem('userId');
+      if (uid) setUserId(Number(uid));
+    };
+    getUserId();
+  }, []);
+
+  const { useUserWishlist, toggleWishlist } = useWishlist(userId);
+  const { data: wishlistItemsData = [] } = useUserWishlist();
+  const wishlistItems = Array.isArray(wishlistItemsData) ? wishlistItemsData.map(item => item.productId || item.id) : [];
+
+  const products = collection?.items?.map(it => it?.product).filter(p => !!p) || [];
+
+  const handleToggleWishlist = async (productId) => {
+    if (!userId) {
+      router.push('/(Authentication)/Login');
+      return;
     }
-  }, [id]);
-
-  useEffect(() => {
-    if (id) fetchUserWishlist();
-  }, [id]);
-
-  const fetchCollection = async () => {
-    try {
-      setLoading(true);
-      const res = await API.get(`/api/collections/public/${id}`);
-
-      const col = res.data || null;
-      setCollection(col);
-      const items = Array.isArray(col?.items) ? col.items : [];
-      const prods = items
-        .map((it) => it?.product)
-        .filter((p) => !!p && (p.id != null || p.productId != null));
-      setProducts(prods);
-    } catch (e) {
-      console.error('Error fetching collection detail:', e?.response?.data || e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserWishlist = async () => {
-    try {
-      if (!id) return;
-      const response = await API.get(`/wishlist/user/${id}`);
-      const wishlistProductIds = response.data.map(item => item.productId);
-      setWishlistItems(wishlistProductIds);
-    } catch (error) {
-      console.error('Error fetching wishlist:', error);
-    }
-  };
-
-  const toggleWishlist = async (productId) => {
-    try {
-      if (!id) return;
-      const isInWishlist = wishlistItems.includes(productId);
-
-      if (isInWishlist) {
-        // Remove from wishlist
-        await API.post('/wishlist/remove', { user_id: id, productId });
-        setWishlistItems(wishlistItems.filter(id => id !== productId));
-      } else {
-        // Add to wishlist
-        await API.post('/wishlist/add', { user_id: id, productId });
-        setWishlistItems([...wishlistItems, productId]);
-      }
-    } catch (error) {
-      console.error('Error toggling wishlist:', error);
-    }
+    const isInWishlist = wishlistItems.includes(productId);
+    await toggleWishlist({ productId, isInWishlist });
   };
 
 
@@ -99,7 +65,7 @@ const CollectionDetail = () => {
               style={styles.productImage}
             />
             <Pressable
-              onPress={() => toggleWishlist(item?.productId || item?.id)}
+              onPress={() => handleToggleWishlist(item?.productId || item?.id)}
               className="absolute top-2 left-2 bg-white/90 rounded-full p-2"
             >
               <Ionicons
@@ -108,7 +74,7 @@ const CollectionDetail = () => {
                 color={wishlistItems.includes(item?.productId || item?.id) ? '#e74c3c' : '#343434'}
               />
             </Pressable>
-           
+
           </View>
           <View className="p-3">
             <Text className="font-semibold text-gray-800 mb-1" numberOfLines={1}>
@@ -155,8 +121,8 @@ const CollectionDetail = () => {
         }
         numColumns={2}
         columnWrapperStyle={{ justifyContent: 'space-around' }}
-        contentContainerStyle={{ paddingTop: 0, paddingBottom: 24  }}
-    
+        contentContainerStyle={{ paddingTop: 0, paddingBottom: 24 }}
+
         renderItem={renderProduct}
         showsVerticalScrollIndicator={false}
       />

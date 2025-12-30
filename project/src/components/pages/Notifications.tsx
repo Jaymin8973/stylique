@@ -1,32 +1,26 @@
 import React, { useState } from 'react';
-import NotificationApi from '../../services/notificationApi';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const Notifications: React.FC = () => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  const { sendBroadcast, isSending } = useNotifications();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !body) {
-      setError('Please enter both title and message');
+      // Basic client validation
       return;
     }
-    setLoading(true);
-    setError(null);
-    setMessage(null);
+
     try {
-      await NotificationApi.sendBroadcast({ title, body });
-      setMessage('Notification sent to all active users');
+      await sendBroadcast({ title, body });
       setTitle('');
       setBody('');
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || 'Failed to send notification';
-      setError(msg);
-    } finally {
-      setLoading(false);
+      // Toast handled by hook
+    } catch (err) {
+      // Toast handled by hook
     }
   };
 
@@ -58,18 +52,13 @@ const Notifications: React.FC = () => {
             placeholder="Up to 50% off on selected items. Shop now!"
           />
         </div>
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-        )}
-        {message && (
-          <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div>
-        )}
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={isSending}
           className="inline-flex items-center px-4 py-2 rounded-md bg-indigo-600 text-sm font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
         >
-          {loading ? 'Sending...' : 'Send Notification'}
+          {isSending ? 'Sending...' : 'Send Notification'}
         </button>
       </form>
     </div>

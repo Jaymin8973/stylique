@@ -4,48 +4,46 @@ import BannerCarousel from '../../../components/BannerCarousel';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import API from '../../../Api';
+import { useProducts } from '../../../hooks/useProducts';
+import { useCollections } from '../../../hooks/useCollections';
+import { useSales } from '../../../hooks/useSales';
 
 
 
 const Home = () => {
 
-  const icons = ["tag", "emotsmile", "eyeglass", "wallet"]
-  const [Categories, setCategories] = useState("clothing");
+  const icons = ["user", "user-female", "people", "bag"]
+  const [Categories, setCategories] = useState("All");
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [collections, setCollections] = useState([]);
-  const [sales, setSales] = useState([]);
+
   const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef(null);
-  const fetchedCategories = ["All", "clothing", "footwear", "accessories"]
+  // Clothing-only store: filter by gender
+  const fetchedCategories = ["All", "Male", "Female", "Unisex"]
 
 
-  useEffect(() => {
-    fetchCollections();
-    fetchSales();
-  }, []);
+  const { products, refetch: refetchProducts } = useProducts();
+  const { collections, refetch: refetchCollections } = useCollections();
+  const { sales, refetch: refetchSales } = useSales();
 
   useEffect(() => {
     filterAndSortProducts();
-  }, [Categories]);
+  }, [Categories, products]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    filterAndSortProducts();
-    fetchCollections();
-    fetchSales();
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await Promise.all([refetchProducts(), refetchCollections(), refetchSales()]);
+    // filterAndSortProducts will run via useEffect dependence on products
     setRefreshing(false);
   };
 
-  const filterAndSortProducts = async () => {
+  const filterAndSortProducts = () => {
+    let filtered = products || [];
 
-    const response = await API.get('api/products/all');
-    let filtered = response.data || [];
-
+    // Filter by gender for clothing-only store
     if (Categories !== 'All') {
       filtered = filtered.filter(item =>
-        item.productType.toLowerCase() === Categories.toLowerCase()
+        item.gender?.toLowerCase() === Categories.toLowerCase()
       );
       filtered = filtered.slice(0, 10);
     }
@@ -55,24 +53,7 @@ const Home = () => {
     setFeaturedProducts(filtered);
   };
 
-
-  const fetchCollections = async () => {
-    try {
-      const response = await API.get('/api/collections/public');
-      setCollections(response.data || []);
-    } catch (error) {
-      console.error('Error fetching collections:', error);
-    }
-  };
-
-  const fetchSales = async () => {
-    try {
-      const response = await API.get('/api/sales/public');
-      setSales(response.data || []);
-    } catch (error) {
-      console.error('Error fetching sales:', error);
-    }
-  };
+  /* Removed fetchCollections and fetchSales functions as they are handled by hooks */
 
   const collectionBanners = (collections || [])
     .filter((c) => c.imageUrl)

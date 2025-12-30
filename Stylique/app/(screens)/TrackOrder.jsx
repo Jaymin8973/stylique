@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import API from '../../Api';
+import { useOrders } from '../../hooks/useOrders';
 import { THEME } from '../../constants/Theme';
 import { ThemedButton, ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
 
@@ -33,34 +33,26 @@ export default function TrackOrder() {
     return Array.isArray(raw) ? raw[0] : raw;
   }, [params.tracking]);
 
-  const [loading, setLoading] = useState(false);
-  const [order, setOrder] = useState(null);
   const [events, setEvents] = useState([]);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      if (id) {
-        const res = await API.get(`/api/orders/${id}`);
-        setOrder(res.data);
-        setEvents((res.data.tracking || []).sort((a, b) => new Date(b.eventAt) - new Date(a.eventAt)));
-      } else if (tracking) {
-        const res = await API.get(`/api/orders/track/${tracking}`);
-        setOrder(res.data);
-        setEvents((res.data.tracking || []).sort((a, b) => new Date(b.eventAt) - new Date(a.eventAt)));
-      } else {
-        Toast.show({ type: 'error', text1: 'No order to track' });
-      }
-    } catch (e) {
-      Toast.show({ type: 'error', text1: e?.response?.data?.error || 'Failed to load tracking' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* Hook Integration */
+  const { useOrderDetail, useTrackOrder } = useOrders();
 
+  // Conditionally enable hooks
+  const { data: orderById, isLoading: loadingId } = useOrderDetail(id);
+  const { data: orderByTrack, isLoading: loadingTrack } = useTrackOrder(tracking);
+
+  const order = id ? orderById : orderByTrack;
+  const loading = id ? loadingId : loadingTrack;
+
+  /* Effect to set events when order changes */
   useEffect(() => {
-    loadData();
-  }, [id, tracking]);
+    if (order?.tracking) {
+      setEvents((order.tracking || []).sort((a, b) => new Date(b.eventAt) - new Date(a.eventAt)));
+    }
+  }, [order]);
+
+  /* Removed manual loadData function and its Effect */
 
   if (loading || !order) {
     return (
@@ -93,7 +85,10 @@ export default function TrackOrder() {
             ) : (
               <Text className="text-gray-500 mb-2">Tracking started</Text>
             )}
-            <Text className="text-gray-600">Tracking Number : <Text className="font-semibold text-gray-900">{order.trackingNumber || '-'}</Text></Text>
+            <View className="space-y-1">
+              <Text className="text-gray-600">Courier: <Text className="font-semibold text-gray-900">{order.courier || '-'}</Text></Text>
+              <Text className="text-gray-600">Tracking Number: <Text className="font-semibold text-gray-900">{order.trackingNumber || '-'}</Text></Text>
+            </View>
           </View>
 
           <View className="mt-4 mb-6">
@@ -101,6 +96,8 @@ export default function TrackOrder() {
               const isFirst = idx === 0;
               const isLast = idx === events.length - 1;
               const dateStr = formatDate(ev.eventAt);
+              const displayStatus = ev.status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
               return (
                 <View key={ev.id} className="flex-row items-start mb-5">
                   <View className="items-center" style={{ width: 24 }}>
@@ -110,9 +107,10 @@ export default function TrackOrder() {
                     )}
                   </View>
                   <View className="flex-1 ml-3">
-                    <Text className="text-gray-900">
-                      {ev.status}
+                    <Text className="text-gray-900 capitalize">
+                      {displayStatus}
                     </Text>
+                    {ev.location && <Text className="text-xs text-gray-500">{ev.location}</Text>}
                   </View>
                   <Text className="text-gray-500 text-xs">{dateStr}</Text>
                 </View>

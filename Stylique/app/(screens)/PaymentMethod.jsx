@@ -3,17 +3,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View, Linking, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import API from '../../Api';
 import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useOrders } from '../../hooks/useOrders';
 
 const PaymentMethod = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [processing, setProcessing] = useState(false);
   const [agree, setAgree] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState('cod'); // Default to COD
+
+  const { createOrder, isCreating: processing } = useOrders();
 
   const amount = useMemo(() => {
     const raw = params.amount;
@@ -70,15 +71,13 @@ const PaymentMethod = () => {
     }
 
     try {
-      setProcessing(true);
-
       // Create order with COD
-      const orderRes = await API.post('/api/orders', {
+      const orderRes = await createOrder({
         shipping: shippingPrice,
         paymentMethod: 'cod',
       });
 
-      const orderId = orderRes?.data?.id;
+      const orderId = orderRes?.id;
 
       Toast.show({
         type: 'success',
@@ -96,13 +95,13 @@ const PaymentMethod = () => {
       }
     } catch (error) {
       console.error('Order creation error:', error);
+      // Toast handled by hook? Or check if we need to show precise error
+      // Hook invalidates queries but doesn't necessarily show custom error toast with message from backend like here
       Toast.show({
         type: 'error',
         text1: 'Failed to place order',
         text2: error.response?.data?.message || 'Please try again'
       });
-    } finally {
-      setProcessing(false);
     }
   };
 

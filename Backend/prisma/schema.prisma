@@ -129,6 +129,7 @@ model product {
   mrp               String
   sellingPrice      String
   discountPercent   String?
+  taxPercent        String?
   sku               String
   hsnCode           String?
   totalStock        String
@@ -412,6 +413,7 @@ model orders {
   orderNumber    String          @unique
   status         String
   trackingNumber String?
+  courier        String?
   subtotal       String
   shipping       String
   total          String

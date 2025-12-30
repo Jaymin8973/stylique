@@ -4,7 +4,7 @@ import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } fr
 import { Ionicons } from '@expo/vector-icons';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import API from '../../Api';
+import { useOrders } from '../../hooks/useOrders';
 import Toast from 'react-native-toast-message';
 import { THEME } from '../../constants/Theme';
 import { ThemedButton, ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
@@ -19,22 +19,10 @@ const Invoice = () => {
         return Number.isNaN(n) ? null : n;
     }, [params.id]);
 
-    const [loading, setLoading] = useState(false);
+    const { useInvoiceDetail } = useOrders();
+    const { data: invoice, isLoading: loading } = useInvoiceDetail(orderId);
     const [downloading, setDownloading] = useState(false);
-    const [invoice, setInvoice] = useState(null);
-
-    const loadInvoice = async () => {
-        if (!orderId) return;
-        try {
-            setLoading(true);
-            const res = await API.get(`/api/orders/${orderId}/invoice`);
-            setInvoice(res.data);
-        } catch (e) {
-            Toast.show({ type: 'error', text1: e?.response?.data?.error || 'Failed to load invoice' });
-        } finally {
-            setLoading(false);
-        }
-    };
+    /* Removed manual loadInvoice function */
 
     const downloadPDF = async () => {
         if (!orderId) return;
@@ -89,9 +77,7 @@ const Invoice = () => {
         }
     };
 
-    useEffect(() => {
-        loadInvoice();
-    }, [orderId]);
+
 
     if (!orderId) {
         return (

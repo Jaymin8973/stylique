@@ -4,69 +4,32 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { THEME } from '../../constants/Theme';
 import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
-import API from '../../Api';
+import { useAddress } from '../../hooks/useAddress';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Address = () => {
-    const [selectedId, setSelectedId] = useState(null);
     const router = useRouter();
-    const [addresses, setAddresses] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const { addresses, isLoading: loading, setDefaultAddress } = useAddress();
+    const [selectedId, setSelectedId] = useState(null);
 
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            const res = await API.get('/api/address');
-            const data = res.data || [];
-            setAddresses(data);
-            const defaultAddress = data.find(addr => addr.isDefault === true);
-            if (defaultAddress) {
-                setSelectedId(defaultAddress.id);
-            } else if (data.length > 0) {
-                setSelectedId(data[0].id);
-            } else {
-                setSelectedId(null);
-            }
-        }
-        catch (error) {
-            if (error.response) {
-                alert(error.response.data.message || error.response.data.error || "Server error");
-            } else if (error.request) {
-                alert("Network error, please try again");
-            } else {
-                console.log(error.message);
-                alert(error.message);
-            }
-        }
-        finally {
-            setLoading(false);
-        }
-    };
-
+    // Update selected ID based on default address when addresses load
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (addresses.length > 0) {
+            const defaultAddr = addresses.find(a => a.isDefault);
+            setSelectedId(defaultAddr ? defaultAddr.id : addresses[0].id);
+        }
+    }, [addresses]);
 
     const SelectHandle = async (addressId) => {
         setSelectedId(addressId);
         try {
-            setLoading(true);
-            await API.patch(`/api/address/${addressId}/default`);
-            await fetchData();
+            await setDefaultAddress(addressId);
         } catch (error) {
-            if (error.response) {
-                alert(error.response.data.message || error.response.data.error || "Server error");
-            } else if (error.request) {
-                alert("Network error, please try again");
-            } else {
-                console.log(error.message);
-                alert(error.message);
-            }
-        } finally {
-            setLoading(false);
+            console.error(error);
         }
-
     };
+
+    /* Removed fetchData and useEffect as hook does it */
 
     return (
         <ThemedContainer>

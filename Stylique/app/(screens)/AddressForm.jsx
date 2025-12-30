@@ -4,7 +4,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, Te
 import Toast from 'react-native-toast-message';
 import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
 import { THEME } from '../../constants/Theme';
-import API from '../../Api';
+import { useAddress } from '../../hooks/useAddress';
 
 const AddressForm = () => {
   const router = useRouter();
@@ -26,46 +26,32 @@ const AddressForm = () => {
     isDefault: false,
   });
 
-  const loadAddress = useCallback(async () => {
-    if (!isEditing) return;
-    try {
-      setLoading(true);
-      const res = await API.get(`/api/address/${addressId}`);
-      const a = res.data;
-      setForm({
-        firstName: a.firstName || '',
-        lastName: a.lastName || '',
-        mobileNumber: a.mobileNumber || '',
-        pincode: a.pincode || '',
-        houseNo: a.houseNo || '',
-        street: a.street || '',
-        city: a.city || '',
-        state: a.state || '',
-        isDefault: !!a.isDefault,
-      });
-    } catch (error) {
-      if (error.response) {
-        Toast.show({
-          type: 'error',
-          text1:
-            error.response.data.message ||
-            error.response.data.error ||
-            'Failed to load address',
-        });
-      } else {
-        Toast.show({ type: 'error', text1: 'Network error, please try again' });
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [addressId, isEditing]);
+  /* Hook Integration */
+  const { addAddress, updateAddress, addresses, isLoading: addressLoading } = useAddress();
 
+  // Effect to load form data from cached addresses
   useEffect(() => {
-    loadAddress();
-  }, [loadAddress]);
+    if (isEditing && addresses?.length > 0) {
+      const a = addresses.find(addr => addr.id === addressId || addr._id === addressId);
+      if (a) {
+        setForm({
+          firstName: a.firstName || '',
+          lastName: a.lastName || '',
+          mobileNumber: a.mobileNumber || '',
+          pincode: a.pincode || '',
+          houseNo: a.houseNo || '',
+          street: a.street || '',
+          city: a.city || '',
+          state: a.state || '',
+          isDefault: !!a.isDefault,
+        });
+      }
+    }
+  }, [addressId, isEditing, addresses]);
 
+  // Removed manual loadAddress function
 
-
+  /* ... updateField, validate ... */
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -114,40 +100,26 @@ const AddressForm = () => {
       street: form.street.trim(),
       city: form.city.trim(),
       state: form.state.trim(),
+      isDefault: form.isDefault
     };
-
-    if (form.isDefault) {
-      payload.isDefault = true;
-    }
 
     try {
       setSaving(true);
       if (isEditing) {
-        await API.patch(`/api/address/${addressId}`, payload);
-        Toast.show({ type: 'success', text1: 'Address updated' });
+        await updateAddress({ id: addressId, payload });
       } else {
-        await API.post('/api/address', payload);
-        Toast.show({ type: 'success', text1: 'Address added' });
+        await addAddress(payload);
       }
-      router.push('Address');
+      router.back();
     } catch (error) {
-      if (error.response) {
-        Toast.show({
-          type: 'error',
-          text1:
-            error.response.data.message ||
-            error.response.data.error ||
-            'Failed to save address',
-        });
-      } else {
-        Toast.show({ type: 'error', text1: 'Network error, please try again' });
-      }
+      console.error(error);
+      // Toast handling is done in mutation hooks
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  if (addressLoading && isEditing && !form.firstName) {
     return (
       <ThemedContainer>
         <View className="flex-1 justify-center items-center">
@@ -266,14 +238,12 @@ const AddressForm = () => {
                 </View>
                 <TouchableOpacity
                   onPress={() => updateField('isDefault', !form.isDefault)}
-                  className={`w-12 h-7 rounded-full flex-row items-center px-1 ${
-                    form.isDefault ? 'bg-black' : 'bg-gray-300'
-                  }`}
+                  className={`w-12 h-7 rounded-full flex-row items-center px-1 ${form.isDefault ? 'bg-black' : 'bg-gray-300'
+                    }`}
                 >
                   <View
-                    className={`w-5 h-5 rounded-full bg-white ${
-                      form.isDefault ? 'ml-5' : 'ml-0'
-                    }`}
+                    className={`w-5 h-5 rounded-full bg-white ${form.isDefault ? 'ml-5' : 'ml-0'
+                      }`}
                   />
                 </TouchableOpacity>
               </View>

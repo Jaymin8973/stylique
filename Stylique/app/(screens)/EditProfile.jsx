@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import axios from 'axios';
+
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
@@ -7,7 +7,7 @@ import { useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import IpAddress from '../../Config.json';
+import { useUser } from '../../hooks/useUser';
 
 const EditProfile = () => {
     const [image, setImage] = useState(null);
@@ -15,14 +15,30 @@ const EditProfile = () => {
     const [initialValues, setIntialvalues] = useState(null)
     const [open, setOpen] = useState(false);
     const [selectedValue, setSelectedValue] = useState(null);
-const API = axios.create({
-  baseURL: `http://${IpAddress.IpAddress}:3000`,
-});
     const options = [
         { label: 'Male', value: 'male' },
         { label: 'Female', value: 'female' },
         { label: 'Other', value: 'other' },
     ];
+
+    const { user, updateUser, isUpdating } = useUser();
+
+    // Populate form with user data when available
+    useEffect(() => {
+        if (user) {
+            setImage(user.image);
+            setSelectedValue(user.gender || '');
+            setIntialvalues({
+                firstname: user.firstname || '',
+                lastname: user.lastname || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                gender: user.gender || '',
+                image: user.image || ''
+            });
+            setEmail(user.email);
+        }
+    }, [user]);
 
     const handleSelect = (value) => {
         setSelectedValue(value);
@@ -35,11 +51,8 @@ const API = axios.create({
         enableReinitialize: true,
         onSubmit: async (values) => {
             try {
-                const email = await SecureStore.getItemAsync('userEmail');
-                const response = await API.put(`/users/updateUser`, {
-                    email,
-                    ...values,
-                });
+                // email is already in values
+                await updateUser(values);
                 alert("Profile updated successfully");
             } catch (error) {
                 if (error.response) {
@@ -50,32 +63,11 @@ const API = axios.create({
                     console.log(error.message);
                     alert(error.message);
                 }
-            } ''
+            }
         },
     });
 
-    useEffect(() => {
-        FetchData();
-    }, []);
-
-    const FetchData = async () => {
-        try {
-            const email = await SecureStore.getItemAsync('userEmail');
-            const res = await API.post(`http://${IpAddress.IpAddress}:3000/users/user`, { email });
-            setImage(res.data.user.image);
-            setSelectedValue(res.data.user.gender || '');
-            setIntialvalues({
-                firstname: res.data.user.firstname || '',
-                lastname: res.data.user.lastname || '',
-                email: res.data.user.email || '',
-                phone: res.data.user.phone || '',
-                gender: res.data.user.gender || '',
-                image: res.data.user.image || ''
-            });
-        } catch (err) {
-            alert(err?.response?.data?.message || err.message);
-        }
-    };
+    /* Removed FetchData function and its useEffect */
 
     const getEmail = async () => {
         const email = await SecureStore.getItemAsync('userEmail');
@@ -186,7 +178,7 @@ const API = axios.create({
                                                 animationType="fade"
                                                 visible={open}
                                                 onRequestClose={() => setOpen(false)}
-                                                
+
                                             >
                                                 <Pressable
                                                     style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }}

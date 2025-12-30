@@ -1,10 +1,10 @@
-import axios from 'axios';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState, useEffect } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View, TouchableOpacity, Animated } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import IpAddress from '../../Config.json';
+
+import { useAuth } from '../../hooks/useAuth';
 
 const Verification = () => {
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -14,6 +14,8 @@ const Verification = () => {
   const params = useLocalSearchParams();
   const email = params.email;
   const shakeAnimation = useRef(new Animated.Value(0)).current;
+
+  const { verifyOtp, sendOtp } = useAuth();
 
   useEffect(() => {
     if (timer > 0) {
@@ -38,7 +40,7 @@ const Verification = () => {
 
       // Focus last filled input or verify if complete
       if (otpArray.length === 4) {
-        verifyOtp(newOtp.join(''));
+        handleVerifyOtp(newOtp.join(''));
       } else {
         const nextIndex = Math.min(otpArray.length, 3);
         inputsRef.current[nextIndex]?.focus();
@@ -54,7 +56,7 @@ const Verification = () => {
       inputsRef.current[index + 1].focus();
     }
     if (newOtp.join('').length === 4) {
-      verifyOtp(newOtp.join(''));
+      handleVerifyOtp(newOtp.join(''));
     }
   };
 
@@ -73,16 +75,11 @@ const Verification = () => {
     ]).start();
   };
 
-  const API = axios.create({
-    baseURL: `http://${IpAddress.IpAddress}:5001`,
-  });
 
-  const verifyOtp = async (OTP) => {
+
+  const handleVerifyOtp = async (OTP) => {
     try {
-      const response = await API.post(
-        'api/user/verifyOtp',
-        { otp: OTP, email }
-      );
+      const response = await verifyOtp({ otp: OTP, email });
 
       Toast.show({
         type: 'success',
@@ -110,7 +107,7 @@ const Verification = () => {
     if (!canResend) return;
 
     try {
-      await API.post('api/user/sendOtp', { email });
+      await sendOtp({ email });
       setTimer(60);
       setCanResend(false);
       setOtp(['', '', '', '']);

@@ -1,24 +1,23 @@
 import { Fontisto, MaterialCommunityIcons } from '@expo/vector-icons';
-import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useFormik } from 'formik';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
-import IpAddress from '../../Config.json';
+
+import { useAuth } from '../../hooks/useAuth';
 
 const ForgotPassword = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { sendOtp } = useAuth();
 
   const ValidationSchema = yup.object().shape({
     email: yup.string().email('Invalid email').required('Email is required'),
   });
 
-  const API = axios.create({
-    baseURL: `http://${IpAddress.IpAddress}:5001`,
-  });
+
 
   const formik = useFormik({
     initialValues: { email: '' },
@@ -26,7 +25,7 @@ const ForgotPassword = () => {
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        const response = await API.post(`api/user/sendOtp`, values);
+        const response = await sendOtp(values);
         Toast.show({
           type: 'success',
           text1: 'Verification Code Sent',

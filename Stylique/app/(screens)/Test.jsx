@@ -9,18 +9,18 @@ const Test = () => {
       {/* Main content scrollable and bottom sheet ke upar visible */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: bottomSheetHeight }} // Bottom sheet jagah ke liye padding
+        contentContainerStyle={{ paddingBottom: bottomSheetHeight }} // Padding for bottom sheet
       >
         <Text style={{ fontSize: 20, padding: 20 }}>
-          Yeh tumhara upar ka content hoga. Scroll kar sakte ho.
+          This will be your top content. You can scroll.
         </Text>
-        {/* Aur content */}
+        {/* More content */}
       </ScrollView>
 
       {/* Bottom Fixed Sheet */}
       <View style={[styles.bottomSheet, { height: bottomSheetHeight }]}>
         <Text style={{ fontSize: 18, textAlign: 'center' }}>
-          Yeh bottom fixed sheet content hai, hamesha visible rahega.
+          This is bottom fixed sheet content, always visible.
         </Text>
       </View>
     </View>
