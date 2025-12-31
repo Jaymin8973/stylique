@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import API from '../Api';
+import API from '@/Api';
 import Toast from 'react-native-toast-message';
 
 export const useWishlist = (userId) => {

@@ -15,7 +15,7 @@ import * as Yup from 'yup';
 
 
 
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@hooks/useAuth';
 import { Image } from 'expo-image';
 
 const Login = () => {

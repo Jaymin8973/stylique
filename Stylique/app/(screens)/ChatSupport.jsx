@@ -1,8 +1,8 @@
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { useState, useRef, useEffect } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer } from '@components/ThemedComponents';
 
 const ChatSupport = () => {
     const [message, setMessage] = useState('');
@@ -93,8 +93,8 @@ const ChatSupport = () => {
                             >
                                 <View
                                     className={`max-w-[75%] rounded-2xl p-4 ${msg.sender === 'user'
-                                            ? 'bg-black'
-                                            : 'bg-gray-100'
+                                        ? 'bg-black'
+                                        : 'bg-gray-100'
                                         }`}
                                     style={msg.sender === 'user' ? styles.userMessage : styles.supportMessage}
                                 >

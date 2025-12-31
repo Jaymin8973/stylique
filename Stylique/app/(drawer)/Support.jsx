@@ -2,8 +2,8 @@ import { AntDesign, Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } fr
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Linking, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 

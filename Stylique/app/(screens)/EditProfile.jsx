@@ -7,7 +7,7 @@ import { useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '@hooks/useUser';
 
 const EditProfile = () => {
     const [image, setImage] = useState(null);

@@ -3,9 +3,9 @@ import { useState, useMemo } from 'react';
 import { ActivityIndicator, ScrollView, Text, TextInput, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { useProducts } from '../../hooks/useProducts';
-import { THEME } from '../../constants/Theme';
-import { ThemedButton, ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { useProducts } from '@hooks/useProducts';
+import { THEME } from '@constants/Theme';
+import { ThemedButton, ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 
 const MAX_CHARS = 250;
 

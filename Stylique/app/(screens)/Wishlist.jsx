@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, FlatList, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import * as SecureStore from 'expo-secure-store';
-import { useWishlist } from '../../hooks/useWishlist';
+import { useWishlist } from '@hooks/useWishlist';
 import { Ionicons } from '@expo/vector-icons';
 const Wishlist = () => {
 

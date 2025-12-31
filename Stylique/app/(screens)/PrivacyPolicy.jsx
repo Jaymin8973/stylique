@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 
 const PrivacyPolicy = () => {
     const sections = [

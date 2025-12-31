@@ -1,12 +1,12 @@
 import { SimpleLineIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import BannerCarousel from '../../../components/BannerCarousel';
+import BannerCarousel from '@components/BannerCarousel';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useProducts } from '../../../hooks/useProducts';
-import { useCollections } from '../../../hooks/useCollections';
-import { useSales } from '../../../hooks/useSales';
+import { useProducts } from '@hooks/useProducts';
+import { useCollections } from '@hooks/useCollections';
+import { useSales } from '@hooks/useSales';
 
 
 
@@ -152,15 +152,25 @@ const Home = () => {
 
             >
               <View style={styles.productCard} className="m-2  bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-                <Image
-                  source={{
-                    uri:
-                      item.imageUrl ||
-                      item.image ||
-                      'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400',
-                  }}
-                  style={styles.productImage}
-                />
+                <View className="relative">
+                  <Image
+                    source={{
+                      uri:
+                        item.imageUrl ||
+                        item.image ||
+                        'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400',
+                    }}
+                    style={styles.productImage}
+                  />
+                  {/* Sale Badge */}
+                  {item?.saleInfo?.salePrice && (
+                    <View className="absolute top-2 right-2 bg-red-500 px-2 py-1 rounded-full">
+                      <Text className="text-white text-xs font-bold">
+                        {item.saleInfo.discountPercent}% OFF
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 <View className="p-3">
                   <Text
                     numberOfLines={1}
@@ -171,12 +181,23 @@ const Home = () => {
                     {item.productName || item.name}
                   </Text>
 
-                  <Text>
-                    ₹
-                    {item.sellingPrice != null
-                      ? item.sellingPrice
-                      : item.price}
-                  </Text>
+                  {item?.saleInfo?.salePrice ? (
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-green-600 font-bold">
+                        ₹{item.saleInfo.salePrice}
+                      </Text>
+                      <Text className="text-xs text-gray-400 line-through">
+                        ₹{item.saleInfo.originalPrice}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text>
+                      ₹
+                      {item.sellingPrice != null
+                        ? item.sellingPrice
+                        : item.price}
+                    </Text>
+                  )}
                 </View>
               </View>
             </Pressable>

@@ -1,8 +1,8 @@
 import { AntDesign, Fontisto } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 
 const Language = () => {
     const [selectedLanguage, setSelectedLanguage] = useState('English');

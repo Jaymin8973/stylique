@@ -3,12 +3,12 @@ import { useEffect } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer, ThemedSection, ThemedButton } from '@components/ThemedComponents';
 
 // Hooks
-import { useAddress } from '../../hooks/useAddress';
-import { useCart } from '../../hooks/useCart';
+import { useAddress } from '@hooks/useAddress';
+import { useCart } from '@hooks/useCart';
 
 const Checkout = () => {
   const router = useRouter();

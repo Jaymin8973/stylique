@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View, Touc
 import Toast from 'react-native-toast-message';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@hooks/useAuth';
 
 const Verification = () => {
   const [otp, setOtp] = useState(['', '', '', '']);

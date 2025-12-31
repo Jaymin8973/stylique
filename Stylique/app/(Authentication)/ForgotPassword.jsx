@@ -6,7 +6,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableO
 import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
 
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@hooks/useAuth';
 
 const ForgotPassword = () => {
   const router = useRouter();

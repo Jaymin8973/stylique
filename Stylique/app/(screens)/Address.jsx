@@ -2,9 +2,9 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
-import { useAddress } from '../../hooks/useAddress';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer, ThemedSection, ThemedButton } from '@components/ThemedComponents';
+import { useAddress } from '@hooks/useAddress';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Address = () => {

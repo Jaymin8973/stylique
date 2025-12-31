@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import API from '../Api';
+import API from '@/Api';
+
+// Stable empty array to prevent infinite re-renders when used as useEffect dependency
+const EMPTY_ARRAY = [];
 
 export const useProducts = () => {
     const productsQuery = useQuery({
@@ -14,7 +17,7 @@ export const useProducts = () => {
         return useQuery({
             queryKey: ['product', id],
             queryFn: async () => {
-                const response = await API.get(`api/products/${id}`);
+                const response = await API.get(`api/products/pid/${id}`);
                 return response.data;
             },
             enabled: !!id,
@@ -79,7 +82,7 @@ export const useProducts = () => {
     });
 
     return {
-        products: productsQuery.data || [],
+        products: productsQuery.data || EMPTY_ARRAY,
         isLoading: productsQuery.isLoading,
         error: productsQuery.error,
         refetch: productsQuery.refetch,

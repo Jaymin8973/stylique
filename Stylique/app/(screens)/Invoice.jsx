@@ -4,10 +4,10 @@ import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } fr
 import { Ionicons } from '@expo/vector-icons';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { useOrders } from '../../hooks/useOrders';
+import { useOrders } from '@hooks/useOrders';
 import Toast from 'react-native-toast-message';
-import { THEME } from '../../constants/Theme';
-import { ThemedButton, ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedButton, ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 
 const Invoice = () => {
     const router = useRouter();

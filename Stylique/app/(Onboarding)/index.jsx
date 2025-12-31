@@ -7,13 +7,13 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 const Onboarding = () => {
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); 
+  const router = useRouter();
 
   useEffect(() => {
     const checkOnboardStatus = async () => {
       const onboarded = await AsyncStorage.getItem("hasOnboarded");
       if (onboarded === "true") {
-        router.replace("/(tabs)"); 
+        router.replace("/(tabs)");
       } else {
         setLoading(false);
       }

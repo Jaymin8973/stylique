@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCart } from '../../../hooks/useCart';
+import { useCart } from '@hooks/useCart';
 
 
 const Cart = () => {

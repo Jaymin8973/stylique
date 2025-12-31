@@ -51,9 +51,49 @@ router.get('/all', async (req, res) => {
         clothingdetail: true,
         footweardetail: true,
         accessorydetail: true,
+        saleproduct: {
+          include: {
+            sale: true,
+          },
+        },
       },
     });
-    res.json(products);
+
+    // Add saleInfo to each product
+    const now = new Date();
+    const productsWithSaleInfo = products.map((product) => {
+      let saleInfo = null;
+      if (product.saleproduct && product.saleproduct.length > 0) {
+        const activeSale = product.saleproduct.find((sp) => {
+          if (!sp.sale || sp.sale.status !== 'active') return false;
+          if (sp.sale.endAt && new Date(sp.sale.endAt) < now) return false;
+          if (sp.sale.startAt && new Date(sp.sale.startAt) > now) return false;
+          return true;
+        });
+        if (activeSale && activeSale.sale) {
+          const discountPercent = parseFloat(activeSale.sale.discountValue) || 0;
+          const originalPrice = parseFloat(product.sellingPrice) || 0;
+          const discountedPrice = originalPrice - (originalPrice * discountPercent / 100);
+
+          saleInfo = {
+            saleId: activeSale.sale.id,
+            saleName: activeSale.sale.name,
+            discountPercent: discountPercent,
+            salePrice: discountedPrice.toFixed(0),
+            originalPrice: originalPrice.toFixed(0),
+          };
+        }
+      }
+
+      // Remove saleproduct from response and add saleInfo
+      const { saleproduct, ...productData } = product;
+      return {
+        ...productData,
+        saleInfo,
+      };
+    });
+
+    res.json(productsWithSaleInfo);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch products' });

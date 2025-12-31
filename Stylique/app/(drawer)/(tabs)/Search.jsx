@@ -6,7 +6,7 @@ import { Animated } from 'react-native';
 import { useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useProducts } from '../../../hooks/useProducts';
+import { useProducts } from '@hooks/useProducts';
 
 const Search = () => {
   const [searchText, setSearchText] = useState('');

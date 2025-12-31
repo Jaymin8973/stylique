@@ -1,8 +1,8 @@
 import { AntDesign, Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 import { Image } from 'expo-image';
 
 const AboutUs = () => {

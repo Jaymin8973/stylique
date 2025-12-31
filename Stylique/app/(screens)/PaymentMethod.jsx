@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View, Linking, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useOrders } from '../../hooks/useOrders';
+import { useOrders } from '@hooks/useOrders';
 
 const PaymentMethod = () => {
   const router = useRouter();

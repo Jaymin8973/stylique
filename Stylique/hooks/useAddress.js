@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
-import API from '../Api';
+import API from '@/Api';
 
 export const useAddress = () => {
     const addressQuery = useQuery({

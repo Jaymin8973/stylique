@@ -11,7 +11,7 @@ import * as Yup from 'yup';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@hooks/useAuth';
 
 const Signup = () => {
   const router = useRouter();

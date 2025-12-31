@@ -8,7 +8,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import * as yup from 'yup';
-import { usePayment } from '../../hooks/usePayment';
+import { usePayment } from '@hooks/usePayment';
 
 const Addnewcard = () => {
     const [cardType, setCardType] = useState('Visa');

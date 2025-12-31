@@ -6,9 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import { useSales } from '../../hooks/useSales';
-import { useCart } from '../../hooks/useCart';
-import { useWishlist } from '../../hooks/useWishlist';
+import { useSales } from '@hooks/useSales';
+import { useCart } from '@hooks/useCart';
+import { useWishlist } from '@hooks/useWishlist';
 import * as SecureStore from 'expo-secure-store';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1520975682031-569d9b3c5a73?w=600';

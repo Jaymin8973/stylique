@@ -7,7 +7,7 @@ import * as yup from 'yup';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import PasswordChangedPopup from "./PasswordChangedPopup";
 
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@hooks/useAuth';
 
 const Password = () => {
   const params = useLocalSearchParams();

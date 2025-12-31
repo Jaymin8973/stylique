@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
-import API from '../Api';
+import API from '@/Api';
 
 export const useUser = () => {
     const userQuery = useQuery({

@@ -2,10 +2,10 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { THEME } from '../../constants/Theme';
-import { ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 import { ScrollView } from 'react-native';
-import { useOrders } from '../../hooks/useOrders';
+import { useOrders } from '@hooks/useOrders';
 
 const OrderItem = ({ order, onPress }) => {
   const firstItem = order.items?.[0];

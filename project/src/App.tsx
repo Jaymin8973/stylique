@@ -2,28 +2,29 @@ import { useMemo, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
-import Dashboard from './components/pages/Dashboard';
-import Products from './components/pages/Products';
-import Orders from './components/pages/Orders';
+import Dashboard from './features/dashboard/pages/Dashboard';
+import Products from './features/products/pages/Products';
+import Orders from './features/orders/pages/Orders';
 
-import Analytics from './components/pages/Analytics';
-import Users from './components/pages/Users';
-import Notifications from './components/pages/Notifications';
-import Collections from './components/pages/Collections';
-import Sales from './components/pages/Sales';
+import Analytics from './features/analytics/pages/Analytics';
+import Users from './features/users/pages/Users';
+import Notifications from './features/notifications/pages/Notifications';
+import Collections from './features/collections/pages/Collections';
+import Sales from './features/sales/pages/Sales';
 
-import Settings from './components/pages/Settings';
-import ProductUpload from './components/pages/ProductUpload';
-import Marketing from './components/pages/Marketing'; // reused as Promotions
-import Returns from './components/pages/Returns';
-import Payments from './components/pages/Payments';
-import Shipping from './components/pages/Shipping';
-import Reviews from './components/pages/Reviews';
-import Support from './components/pages/Support';
-import ProductDetail from './components/pages/ProductDetail';
-import OrderDetails from './components/pages/OrderDetails';
-import Login from './components/pages/Login';
-import SellerNotifications from './components/pages/SellerNotifications';
+import Settings from './features/settings/pages/Settings';
+import ProductUpload from './features/products/pages/ProductUpload';
+import Marketing from './features/marketing/pages/Marketing'; // reused as Promotions
+import Returns from './features/returns/pages/Returns';
+import Payments from './features/payments/pages/Payments';
+import Shipping from './features/shipping/pages/Shipping';
+import Reviews from './features/reviews/pages/Reviews';
+import Support from './features/support/pages/Support';
+import ProductDetail from './features/products/pages/ProductDetail';
+import OrderDetails from './features/orders/pages/OrderDetails';
+import Login from './features/auth/pages/Login';
+import SellerNotifications from './features/notifications/pages/SellerNotifications';
+
 
 // Small guard component for auth-protected routes
 function RequireAuth({ children }: { children: JSX.Element }) {

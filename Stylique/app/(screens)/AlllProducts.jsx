@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState, useMemo } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { THEME } from '../../constants/Theme';
+import { THEME } from '@constants/Theme';
 import * as SecureStore from 'expo-secure-store';
-import { useProducts } from '../../hooks/useProducts';
-import { useWishlist } from '../../hooks/useWishlist';
-import ProductCard from '../../components/ProductCard';
+import { useProducts } from '@hooks/useProducts';
+import { useWishlist } from '@hooks/useWishlist';
+import ProductCard from '@components/ProductCard';
 
 const AlllProducts = () => {
     const [searchText, setSearchText] = useState('');

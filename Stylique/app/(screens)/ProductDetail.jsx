@@ -7,8 +7,8 @@ import { ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Stars from 'react-native-stars';
 
-import ImageGallery from '../../components/ImageGallery';
-import { THEME } from '../../constants/Theme';
+import ImageGallery from '@components/ImageGallery';
+import { THEME } from '@constants/Theme';
 import Toast from 'react-native-toast-message';
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
@@ -16,9 +16,9 @@ import BottomSheet, { BottomSheetBackdrop, BottomSheetView, BottomSheetFlatList 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Hooks
-import { useProducts } from '../../hooks/useProducts';
-import { useCart } from '../../hooks/useCart';
-import { useWishlist } from '../../hooks/useWishlist';
+import { useProducts } from '@hooks/useProducts';
+import { useCart } from '@hooks/useCart';
+import { useWishlist } from '@hooks/useWishlist';
 
 export default function ProductDetail() {
   const params = useLocalSearchParams();

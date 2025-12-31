@@ -1,6 +1,6 @@
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { StyleSheet, Text, View } from 'react-native';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '@hooks/useUser';
 
 
 export default function CustomDrawerContent(props) {

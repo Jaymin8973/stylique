@@ -2,9 +2,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View, TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { ThemedContainer, ThemedSection, ThemedButton } from '../../components/ThemedComponents';
-import { THEME } from '../../constants/Theme';
-import { useAddress } from '../../hooks/useAddress';
+import { ThemedContainer, ThemedSection, ThemedButton } from '@components/ThemedComponents';
+import { THEME } from '@constants/Theme';
+import { useAddress } from '@hooks/useAddress';
 
 const AddressForm = () => {
   const router = useRouter();

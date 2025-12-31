@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useProducts } from '../hooks/useProducts';
+import { useProducts } from '@hooks/useProducts';
 
 const ProductCard = ({ item, wishlistItems, toggleWishlist, width = '48%' }) => {
     const router = useRouter();
@@ -12,6 +12,7 @@ const ProductCard = ({ item, wishlistItems, toggleWishlist, width = '48%' }) => 
     const { data: rating } = useProductRating(productId);
 
     const avgRating = rating?.avgRating || 0;
+    const hasSale = item?.saleInfo && item?.saleInfo?.salePrice;
 
     return (
         <Pressable
@@ -40,7 +41,15 @@ const ProductCard = ({ item, wishlistItems, toggleWishlist, width = '48%' }) => 
                             color={wishlistItems.includes(productId) ? '#e74c3c' : '#343434'}
                         />
                     </Pressable>
-                    {(item?.totalStock > 0) && (
+
+                    {/* Sale Badge */}
+                    {hasSale ? (
+                        <View className="absolute top-2 right-2 bg-red-500 px-2 py-1 rounded-full">
+                            <Text className="text-white text-xs font-bold">
+                                {item.saleInfo.discountPercent}% OFF
+                            </Text>
+                        </View>
+                    ) : (item?.totalStock > 0) && (
                         <View className="absolute top-2 right-2 bg-[#343434] px-2 py-1 rounded-full">
                             <Text className="text-white text-xs font-medium">
                                 {item?.totalStock > 10 ? 'In Stock' : 'Limited'}
@@ -56,9 +65,20 @@ const ProductCard = ({ item, wishlistItems, toggleWishlist, width = '48%' }) => 
                         {item?.brand || 'Stylique'}
                     </Text>
                     <View className="flex-row justify-between items-center">
-                        <Text className="text-lg font-bold text-gray-900">
-                            ₹{item?.sellingPrice || '0.00'}
-                        </Text>
+                        {hasSale ? (
+                            <View className="flex-row items-center gap-2">
+                                <Text className="text-lg font-bold text-green-600">
+                                    ₹{item.saleInfo.salePrice}
+                                </Text>
+                                <Text className="text-sm text-gray-400 line-through">
+                                    ₹{item.saleInfo.originalPrice}
+                                </Text>
+                            </View>
+                        ) : (
+                            <Text className="text-lg font-bold text-gray-900">
+                                ₹{item?.sellingPrice || '0.00'}
+                            </Text>
+                        )}
                         <View className="flex-row items-center">
                             <Ionicons name="star" size={14} color="#FFA500" />
                             <Text className="text-xs text-gray-600 ml-1">

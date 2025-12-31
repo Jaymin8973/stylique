@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '../../../hooks/useUser';
+import { useUser } from '@hooks/useUser';
 import { Image } from 'expo-image';
 
 const Profile = () => {

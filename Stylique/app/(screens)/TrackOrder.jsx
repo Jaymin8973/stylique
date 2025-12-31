@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { useOrders } from '../../hooks/useOrders';
-import { THEME } from '../../constants/Theme';
-import { ThemedButton, ThemedContainer, ThemedSection } from '../../components/ThemedComponents';
+import { useOrders } from '@hooks/useOrders';
+import { THEME } from '@constants/Theme';
+import { ThemedButton, ThemedContainer, ThemedSection } from '@components/ThemedComponents';
 
 const formatDate = (iso) => {
   try {
