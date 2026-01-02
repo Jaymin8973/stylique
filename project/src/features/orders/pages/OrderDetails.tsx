@@ -366,14 +366,14 @@ const OrderDetails: React.FC = () => {
 
     const handleUpdateStatus = async () => {
         if (!selectedStatus || !id) return;
-
+        console.log(selectedStatus);
         try {
             await updateStatus({ id: Number(id), status: selectedStatus });
             setShowStatusModal(false);
             setSelectedStatus('');
             // Toast handled by hook
         } catch (err: any) {
-            // Toast handled by hook
+            console.log(err.message);
         }
     };
 
@@ -505,7 +505,7 @@ const OrderDetails: React.FC = () => {
                         )}
                         <button
                             onClick={() => {
-                                setSelectedStatus(order.status);
+                                setSelectedStatus('');  // Start with empty, user must pick a new status
                                 setShowStatusModal(true);
                             }}
                             className="flex items-center text-sm text-black hover:text-gray-600"
@@ -546,6 +546,7 @@ const OrderDetails: React.FC = () => {
                                     {/* Helper to check if status is permitted */}
                                     {(() => {
                                         const current = order.status;
+                                        console.log(current);
                                         const transitions: Record<string, string[]> = {
                                             'pending': ['confirmed', 'cancelled'],
                                             'confirmed': ['processing', 'cancelled'],
@@ -554,7 +555,7 @@ const OrderDetails: React.FC = () => {
                                             'out_for_delivery': ['delivered'],
                                             'delivered': ['return_requested'],
                                             'return_requested': ['return_approved', 'delivered'],
-                                            'return_approved': ['return_picked'],
+                                            'return_approved': ['return_picked',],
                                             'return_picked': ['refunded'],
                                             'cancelled': [],
                                             'refunded': []

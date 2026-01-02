@@ -249,7 +249,7 @@ export default function ProductDetail() {
 
                 <View className="flex-row items-center mb-4">
                   <Stars
-                    default={parseFloat(rating.avgRating || 4.5)}
+                    default={parseFloat(rating?.avgRating || 4.5)}
                     count={5}
                     disabled={true}
                     half={true}

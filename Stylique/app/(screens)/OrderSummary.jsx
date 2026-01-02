@@ -1,11 +1,12 @@
-/**
- * OrderSummary Screen
- * Shows order details - items, total, address
- * Contains Cancel or Return request buttons based on status
- */
 
+
+import { ThemedContainer, ThemedSection, ThemedButton } from '@/components/ThemedComponents';
+import THEME from '@/constants/Theme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-// ... imports
+import { ActivityIndicator, View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Toast from 'react-native-toast-message';
+import { useOrders } from '@hooks/useOrders';
 
 // Cancellable statuses - can cancel before shipping
 const CANCELLABLE_STATUSES = ['pending', 'confirmed', 'processing'];
@@ -13,7 +14,13 @@ const CANCELLABLE_STATUSES = ['pending', 'confirmed', 'processing'];
 const RETURNABLE_STATUSES = ['delivered'];
 
 const OrderSummary = () => {
-  // ... existing code ...
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const orderId = params.id;
+
+  // Get order hooks
+  const { useOrderDetail, cancelOrder, isCancelling, returnOrder, isReturning } = useOrders();
+  const { data: order, isLoading: loading } = useOrderDetail(orderId);
 
   // Cancel order handler
   const handleCancelOrder = () => {
